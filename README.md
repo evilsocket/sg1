@@ -25,6 +25,9 @@ You can contribute by:
 Encrypting data in AES and exfiltrate it via DNS requests:
 ![aes-dns](https://pbs.twimg.com/media/DPHsSLwWkAEbg7P.jpg:large)
 
+With bouncing to another host:
+![bounce](https://pbs.twimg.com/media/DPHtBocWsAAyDVN.jpg:large)
+
 Quick and dirty AES encrypted chat over TCP:
 ![aes-tcp](https://pbs.twimg.com/media/DPHAlOXWAAA9kKv.jpg:large)
 
