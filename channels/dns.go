@@ -96,7 +96,7 @@ func (c *DNSChannel) Name() string {
 }
 
 func (c *DNSChannel) Description() string {
-	return "As input, read data from incoming DNS requests (example server: dns:192.168.1.2:5353), as output write data as DNS requests (example client: dns:example.com@192.168.1.2:5353)."
+	return "As input, read data from incoming DNS requests (example server: dns:example.com@192.168.1.2:5353), as output write data as DNS requests (example client: dns:example.com@192.168.1.2:5353)."
 }
 
 func (c *DNSChannel) SetData(data []byte) {
