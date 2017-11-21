@@ -56,6 +56,9 @@ You can contribute by:
 
 ## Examples
 
+Simple file exfiltration over DNS:
+![file](https://pbs.twimg.com/media/DPH8KkAWsAE5rZZ.jpg:large)
+
 Quick and dirty AES encrypted chat over TCP:
 ![aes-tcp](https://pbs.twimg.com/media/DPHAlOXWAAA9kKv.jpg:large)
 
