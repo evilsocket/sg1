@@ -12,6 +12,14 @@ SG1 is a wanna be swiss army knife for data encryption, exfiltration and covert 
     cd $GOPATH/src/github.com/evilsocket/sg1/
     make
 
+## Contribute
+
+You can contribute by:
+
+1) Grep for `TODO` and see how you can help.
+2) Implement a new module ( see `modules/raw.go` for very basic example or `modules/aes.go` for complete one ).
+3) Implement a new channel ( see `channels/*.go` ).
+
 ## Examples
 
 Encrypting data in AES and exfiltrate it via DNS requests:
