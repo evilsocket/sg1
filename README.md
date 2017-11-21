@@ -23,4 +23,4 @@ Quick and dirty AES encrypted chat over TCP:
 AES encrypted chat over DNS:
 ![aes-tcp](https://pbs.twimg.com/media/DPHegHLWsAErZtO.jpg:large)
 
-Just use `sg1 -h` to see a list of available channels and modules, try to pipe them and see what happens, you can also transfer files ^_^
+Just use `sg1 -h` to see a list of available channels and modules, try to pipe them and see what happens, you can also transfer files and make requests "bounce" to several machines with random AES keys ^_^
