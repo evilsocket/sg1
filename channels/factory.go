@@ -82,14 +82,13 @@ func Factory(channel_name string, direction Direction) (channel Channel, err err
 		return nil, fmt.Errorf("No channel with name %s has been registered.", channel_name)
 	}
 
+	if err := channel.Setup(direction, channel_args); err != nil {
+		return nil, err
+	}
 	if direction == INPUT_CHANNEL && channel.HasReader() == false {
 		return nil, fmt.Errorf("Can't use channel '%s' for reading.", channel_name)
 	} else if direction == OUTPUT_CHANNEL && channel.HasWriter() == false {
 		return nil, fmt.Errorf("Can't use channel '%s' for writing.", channel_name)
-	}
-
-	if err := channel.Setup(direction, channel_args); err != nil {
-		return nil, err
 	}
 
 	return channel, nil

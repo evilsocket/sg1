@@ -53,8 +53,9 @@ func init() {
 	//channels.Register(channels.NewTCPClientChannel())
 	//channels.Register(channels.NewTCPServerChannel())
 	channels.Register(channels.NewTCPChannel())
-	channels.Register(channels.NewDNSClientChannel())
-	channels.Register(channels.NewDNSServerChannel())
+	// channels.Register(channels.NewDNSClientChannel())
+	// channels.Register(channels.NewDNSServerChannel())
+	channels.Register(channels.NewDNSChannel())
 
 	modules.Register(modules.NewRaw())
 	modules.Register(modules.NewBase64())
