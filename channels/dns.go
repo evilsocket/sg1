@@ -35,7 +35,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -43,6 +42,7 @@ var (
 	DNSChunkSize         = 16
 	DNSHostAddressParser = regexp.MustCompile("^([^@]+)@([^:]+):([\\d]+)$")
 	DNSAddressParser     = regexp.MustCompile("^([^:]+):([\\d]+)$")
+	DNSQuestionParser    = regexp.MustCompile("^([a-fA-F0-9]{40})\\.(.+)\\.$")
 )
 
 type DNSClient struct {
@@ -124,14 +124,11 @@ func (c *DNSChannel) setupServer(args string) error {
 	}
 
 	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
-		// TODO: This is horrible, refactor with proper packet parsing.
 		if len(r.Question) == 1 {
-			parts := strings.SplitN(r.Question[0].Name, ".", 2)
-			if len(parts) == 2 {
-				chunk := parts[0]
-				domain := parts[1]
-				// 4 bytes of seqn + DNS chunk
-				if (c.domain == "" || (c.domain+"." == domain)) || len(chunk) == (4+DNSChunkSize) {
+			if m := DNSQuestionParser.FindStringSubmatch(r.Question[0].Name); len(m) == 3 {
+				chunk := m[1]
+				domain := m[2]
+				if c.domain == "" || c.domain == domain {
 					seqn_hex := chunk[0:8]
 					data_hex := chunk[8:]
 
@@ -169,8 +166,6 @@ func (c *DNSChannel) setupClient(args string) error {
 
 func (c *DNSChannel) Setup(direction Direction, args string) (err error) {
 	if m := DNSHostAddressParser.FindStringSubmatch(args); len(m) > 0 {
-		// fmt.Fprintf(os.Stderr, "host+addr: %v\n", m)
-
 		c.domain = m[1]
 		c.address = m[2]
 		if c.port, err = strconv.Atoi(m[3]); err != nil {
@@ -178,14 +173,10 @@ func (c *DNSChannel) Setup(direction Direction, args string) (err error) {
 		}
 
 	} else if m := DNSAddressParser.FindStringSubmatch(args); len(m) > 0 {
-		// fmt.Fprintf(os.Stderr, "addr: %v\n", m)
-
 		c.address = m[1]
 		if c.port, err = strconv.Atoi(m[2]); err != nil {
 			return err
 		}
-	} else {
-		// fmt.Fprintf(os.Stderr, "nothing\n")
 	}
 
 	if direction == INPUT_CHANNEL {
