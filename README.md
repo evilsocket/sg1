@@ -66,3 +66,8 @@ With bouncing to another host:
 ![bounce](https://pbs.twimg.com/media/DPHtBocWsAAyDVN.jpg:large)
 
 Just use `sg1 -h` to see a list of available channels and modules, try to pipe them and see what happens, you can also transfer files and make requests "bounce" to several machines with random AES keys ^_^
+
+## License
+
+SG1 was made with ♥  by [Simone Margaritelli](https://www.evilsocket.net/) and it's released under the GPL 3 license.
+
