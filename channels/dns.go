@@ -174,13 +174,14 @@ func (c *DNSChannel) setupClient(args string) error {
 
 func (c *DNSChannel) Setup(direction Direction, args string) (err error) {
 	if m := DNSHostAddressParser.FindStringSubmatch(args); len(m) > 0 {
+		// dns:evil.com@8.8.8.8:53
 		c.domain = m[1]
 		c.address = m[2]
 		if c.port, err = strconv.Atoi(m[3]); err != nil {
 			return err
 		}
-
 	} else if m := DNSAddressParser.FindStringSubmatch(args); len(m) > 0 {
+		// dns:8.8.8.8:53 <- use default domain
 		c.address = m[1]
 		if c.port, err = strconv.Atoi(m[2]); err != nil {
 			return err
