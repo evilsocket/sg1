@@ -47,13 +47,13 @@ func NewPacket(seqn uint32, datasize uint8, data []byte) *Packet {
 
 func DecodePacket(buffer []byte) (p *Packet, err error) {
 	buf_size := len(buffer)
-	if buf_size < 5 {
+	if buf_size < p.HeaderSize() {
 		return nil, fmt.Errorf("Buffer size %d is less than minimum required.", buf_size)
 	}
 
 	seqn_buf := buffer[0:4]
 	size_buf := buffer[4:5]
-	max_size := len(buffer) - 4 - 1
+	max_size := len(buffer) - p.HeaderSize()
 
 	// TODO: Check sequence number
 	seqn := binary.BigEndian.Uint32(seqn_buf)
@@ -67,6 +67,10 @@ func DecodePacket(buffer []byte) (p *Packet, err error) {
 	}
 
 	return NewPacket(seqn, size, data_buf[:size]), nil
+}
+
+func (p *Packet) HeaderSize() int {
+	return 4 + 1
 }
 
 func (p *Packet) Encode() []byte {
