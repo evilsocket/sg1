@@ -59,7 +59,7 @@ func (c *DNSClient) Name() string {
 }
 
 func (c *DNSClient) Description() string {
-	return "Write data as DNS queries ( example: dnsclient:example.com will use <hex sequence number + hex chunk>.example.com for exfiltration )."
+	return "Write data as DNS queries ( examples: dnsclient:example.com / dnsclient:example.com@resolver-ip will use <hex sequence number + hex chunk>.example.com for exfiltration )."
 }
 
 func (c *DNSClient) SetArgs(args string) error {

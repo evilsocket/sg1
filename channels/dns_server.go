@@ -62,7 +62,7 @@ func (c *DNSServer) Name() string {
 }
 
 func (c *DNSServer) Description() string {
-	return "Read data incoming as DNS requests."
+	return "Read data incoming as DNS requests (example: dnsserver:192.168.1.2:5353)."
 }
 
 func (c *DNSServer) SetData(data []byte) {
