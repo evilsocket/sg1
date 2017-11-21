@@ -56,6 +56,7 @@ func init() {
 	channels.Register(channels.NewDNSServerChannel())
 
 	modules.Register(modules.NewRaw())
+	modules.Register(modules.NewBase64())
 	modules.Register(modules.NewAES())
 
 	flag.Usage = func() {
