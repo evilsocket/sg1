@@ -126,11 +126,12 @@ func (c *DNSChannel) setupServer(args string) error {
 	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
 		// TODO: This is horrible, refactor with proper packet parsing.
 		if len(r.Question) == 1 {
-			// TODO: Check domain if setted.
 			parts := strings.SplitN(r.Question[0].Name, ".", 2)
 			if len(parts) == 2 {
 				chunk := parts[0]
-				if len(chunk) == 40 {
+				domain := parts[1]
+				// 4 bytes of seqn + DNS chunk
+				if (c.domain == "" || (c.domain+"." == domain)) || len(chunk) == (4+DNSChunkSize) {
 					seqn_hex := chunk[0:8]
 					data_hex := chunk[8:]
 
