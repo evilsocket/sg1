@@ -67,6 +67,9 @@ Quick and dirty AES encrypted chat over TCP:
 Encrypting data in AES and exfiltrate it via DNS requests:
 ![aes-dns](https://pbs.twimg.com/media/DPHsSLwWkAEbg7P.jpg:large)
 
+Executing commands encoded and sent via DNS requests:
+![exec](https://pbs.twimg.com/media/DPKgERnX0AEKuJn.jpg:large)
+
 Test with different operating systems ( tnx to [decoded](https://twitter.com/d3d0c3d) ):
 ![freebsd](https://pbs.twimg.com/media/DPH0612UQAA3gzg.jpg:large)
 
