@@ -104,8 +104,8 @@ func formatBytes(bytes int) string {
 	}
 }
 
-func formatSpeed(speed float64) string {
-	return fmt.Sprintf("%s/s", formatBytes(int(speed)))
+func formatSpeed(bps float64) string {
+	return fmt.Sprintf("%s/s", formatBytes(int(bps)))
 }
 
 func main() {
@@ -147,20 +147,20 @@ func main() {
 	} else {
 		elapsed := time.Since(start)
 		es := elapsed.Seconds()
-		speed := float64(0.0)
+		bps := float64(0.0)
 		read := input.Stats().TotalRead
 		wrote := output.Stats().TotalWrote
 
 		if read < wrote {
-			speed = float64(read) / es
+			bps = float64(read) / es
 		} else {
-			speed = float64(wrote) / es
+			bps = float64(wrote) / es
 		}
 
 		fmt.Fprintf(os.Stderr, "\n\n")
 		fmt.Fprintf(os.Stderr, "Total read    : %s\n", formatBytes(read))
 		fmt.Fprintf(os.Stderr, "Total written : %s\n", formatBytes(wrote))
 		fmt.Fprintf(os.Stderr, "Time elapsed  : %s\n", elapsed)
-		fmt.Fprintf(os.Stderr, "Speed         : %s\n", formatSpeed(speed))
+		fmt.Fprintf(os.Stderr, "Speed         : %s\n", formatSpeed(bps))
 	}
 }
