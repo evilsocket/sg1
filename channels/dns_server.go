@@ -95,6 +95,7 @@ func (c *DNSServer) SetArgs(args string) error {
 	}()
 
 	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
+		// TODO: This is horrible, refactor with proper packet parsing.
 		if len(r.Question) == 1 {
 			parts := strings.SplitN(r.Question[0].Name, ".", 2)
 			if len(parts) == 2 {
