@@ -41,12 +41,14 @@ var (
 	from        = "console"
 	to          = "console"
 	module_name = "raw"
+	delay       = int(0)
 )
 
 func init() {
 	flag.StringVar(&from, "in", from, "Read input data from this channel.")
 	flag.StringVar(&to, "out", to, "Write output data to this channel.")
 	flag.StringVar(&module_name, "module", module_name, "Module name to use.")
+	flag.IntVar(&delay, "delay", delay, "Delay in milliseconds to wait between one I/O loop and another, or 0 for no delay.")
 
 	channels.Register(channels.NewConsoleChannel())
 	channels.Register(channels.NewTCPChannel())
@@ -141,7 +143,7 @@ func main() {
 
 	start := time.Now()
 
-	if err = module.Run(input, output); err != nil {
+	if err = module.Run(input, output, delay); err != nil {
 		fmt.Println(err)
 	} else {
 		elapsed := time.Since(start)

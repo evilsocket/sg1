@@ -30,6 +30,7 @@ import (
 	b64 "encoding/base64"
 	"flag"
 	"github.com/evilsocket/sg1/channels"
+	"time"
 )
 
 type Base64 struct {
@@ -59,7 +60,7 @@ func (m *Base64) Register() error {
 	return nil
 }
 
-func (m *Base64) Run(input, output channels.Channel) error {
+func (m *Base64) Run(input, output channels.Channel, delay int) error {
 	var err error
 	var block = make([]byte, 1024)
 	var n int
@@ -88,6 +89,10 @@ func (m *Base64) Run(input, output channels.Channel) error {
 
 		if _, err = output.Write(buff); err != nil {
 			return err
+		}
+
+		if delay > 0 {
+			time.Sleep(time.Duration(delay) * time.Millisecond)
 		}
 	}
 

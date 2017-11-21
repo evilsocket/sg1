@@ -34,6 +34,7 @@ import (
 	"fmt"
 	"github.com/evilsocket/sg1/channels"
 	"io"
+	"time"
 )
 
 type AES struct {
@@ -66,7 +67,7 @@ func (m *AES) Register() error {
 	return nil
 }
 
-func (m *AES) encrypt(block cipher.Block, input, output channels.Channel) error {
+func (m *AES) encrypt(block cipher.Block, input, output channels.Channel, delay int) error {
 	// generate and send the IV
 	iv := make([]byte, aes.BlockSize)
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
@@ -99,12 +100,16 @@ func (m *AES) encrypt(block cipher.Block, input, output channels.Channel) error 
 		if _, err = output.Write(ciphertext); err != nil {
 			return err
 		}
+
+		if delay > 0 {
+			time.Sleep(time.Duration(delay) * time.Millisecond)
+		}
 	}
 
 	return nil
 }
 
-func (m *AES) decrypt(block cipher.Block, input, output channels.Channel) error {
+func (m *AES) decrypt(block cipher.Block, input, output channels.Channel, delay int) error {
 	// read iv
 	iv := make([]byte, aes.BlockSize)
 	if _, err := input.Read(iv); err != nil {
@@ -133,12 +138,16 @@ func (m *AES) decrypt(block cipher.Block, input, output channels.Channel) error 
 		if _, err = output.Write(buff); err != nil {
 			return err
 		}
+
+		if delay > 0 {
+			time.Sleep(time.Duration(delay) * time.Millisecond)
+		}
 	}
 
 	return nil
 }
 
-func (m *AES) Run(input, output channels.Channel) error {
+func (m *AES) Run(input, output channels.Channel, delay int) error {
 	if m.key == "" {
 		return fmt.Errorf("No AES key specified.")
 	}
@@ -150,9 +159,9 @@ func (m *AES) Run(input, output channels.Channel) error {
 	}
 
 	if m.mode == "encrypt" {
-		return m.encrypt(block_cipher, input, output)
+		return m.encrypt(block_cipher, input, output, delay)
 	} else if m.mode == "decrypt" {
-		return m.decrypt(block_cipher, input, output)
+		return m.decrypt(block_cipher, input, output, delay)
 	} else {
 		return fmt.Errorf("Invalid --aes-mode parameter specified.")
 	}

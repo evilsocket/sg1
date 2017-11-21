@@ -28,6 +28,7 @@ package modules
 
 import (
 	"github.com/evilsocket/sg1/channels"
+	"time"
 )
 
 type Raw struct {
@@ -49,7 +50,7 @@ func (m *Raw) Register() error {
 	return nil
 }
 
-func (m *Raw) Run(input, output channels.Channel) error {
+func (m *Raw) Run(input, output channels.Channel, delay int) error {
 	var n int
 	var err error
 	var buff = make([]byte, 1024)
@@ -65,6 +66,10 @@ func (m *Raw) Run(input, output channels.Channel) error {
 
 		if _, err = output.Write(buff[:n]); err != nil {
 			return err
+		}
+
+		if delay > 0 {
+			time.Sleep(time.Duration(delay) * time.Millisecond)
 		}
 	}
 

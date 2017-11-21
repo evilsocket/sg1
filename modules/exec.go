@@ -32,6 +32,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 type Exec struct {
@@ -53,7 +54,7 @@ func (m *Exec) Register() error {
 	return nil
 }
 
-func (m *Exec) Run(input, output channels.Channel) error {
+func (m *Exec) Run(input, output channels.Channel, delay int) error {
 	var n int
 	var err error
 	var buff = make([]byte, 1024)
@@ -99,6 +100,10 @@ func (m *Exec) Run(input, output channels.Channel) error {
 			if _, err = output.Write(cmdout); err != nil {
 				return err
 			}
+		}
+
+		if delay > 0 {
+			time.Sleep(time.Duration(delay) * time.Millisecond)
 		}
 	}
 
