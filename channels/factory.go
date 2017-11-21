@@ -58,7 +58,7 @@ func Registered() map[string]Channel {
 	return registered
 }
 
-func Factory(channel_name string, as_input bool) (channel Channel, err error) {
+func Factory(channel_name string, direction Direction) (channel Channel, err error) {
 	mt.Lock()
 	defer mt.Unlock()
 
@@ -82,13 +82,13 @@ func Factory(channel_name string, as_input bool) (channel Channel, err error) {
 		return nil, fmt.Errorf("No channel with name %s has been registered.", channel_name)
 	}
 
-	if as_input == true && channel.HasReader() == false {
+	if direction == INPUT_CHANNEL && channel.HasReader() == false {
 		return nil, fmt.Errorf("Can't use channel '%s' for reading.", channel_name)
-	} else if as_input == false && channel.HasWriter() == false {
+	} else if direction == OUTPUT_CHANNEL && channel.HasWriter() == false {
 		return nil, fmt.Errorf("Can't use channel '%s' for writing.", channel_name)
 	}
 
-	if err := channel.SetArgs(channel_args); err != nil {
+	if err := channel.Setup(direction, channel_args); err != nil {
 		return nil, err
 	}
 

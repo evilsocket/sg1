@@ -28,30 +28,49 @@ package channels
 
 import (
 	"net"
+	"sync"
 )
 
-type TCPClient struct {
+type TCPChannel struct {
+	is_client  bool
 	address    *net.TCPAddr
 	connection *net.TCPConn
+	client     net.Conn
+	listener   net.Listener
+	mutex      *sync.Mutex
+	cond       *sync.Cond
 	stats      Stats
 }
 
-func NewTCPClientChannel() *TCPClient {
-	return &TCPClient{
+func NewTCPChannel() *TCPChannel {
+	s := &TCPChannel{
+		is_client:  true,
 		address:    nil,
 		connection: nil,
+		mutex:      &sync.Mutex{},
+		cond:       nil,
 	}
+
+	s.cond = sync.NewCond(s.mutex)
+	return s
 }
 
-func (c *TCPClient) Name() string {
-	return "tcpclient"
+func (c *TCPChannel) Name() string {
+	return "tcp"
 }
 
-func (c *TCPClient) Description() string {
-	return "Read or write data on a TCP client connection ( example: tcpclient:192.168.1.2:8080 )."
+func (c *TCPChannel) Description() string {
+	return "Read or write data on a TCP server (for input) or client (for output) connection ( example: tcp:127.0.0.1:8080 )."
 }
 
-func (c *TCPClient) SetArgs(args string) (err error) {
+func (c *TCPChannel) Setup(direction Direction, args string) (err error) {
+	if direction == INPUT_CHANNEL {
+		c.is_client = false
+
+	} else {
+		c.is_client = true
+	}
+
 	if c.address, err = net.ResolveTCPAddr("tcp", args); err != nil {
 		return err
 	}
@@ -59,38 +78,77 @@ func (c *TCPClient) SetArgs(args string) (err error) {
 	return nil
 }
 
-func (c *TCPClient) Start() (err error) {
-	if c.connection, err = net.DialTCP("tcp", nil, c.address); err != nil {
-		return err
+func (c *TCPChannel) Start() (err error) {
+	if c.is_client {
+		if c.connection, err = net.DialTCP("tcp", nil, c.address); err != nil {
+			return err
+		}
+	} else {
+		if c.listener, err = net.ListenTCP("tcp", c.address); err != nil {
+			return err
+		}
+
+		go func() {
+			for {
+				if conn, err := c.listener.Accept(); err == nil {
+					c.client = conn
+					c.mutex.Lock()
+					c.cond.Signal()
+					c.mutex.Unlock()
+				} else {
+					break
+				}
+			}
+		}()
 	}
 
 	return nil
 }
 
-func (c *TCPClient) HasReader() bool {
+func (c *TCPChannel) HasReader() bool {
 	return true
 }
 
-func (c *TCPClient) HasWriter() bool {
+func (c *TCPChannel) HasWriter() bool {
 	return true
 }
 
-func (c *TCPClient) Read(b []byte) (n int, err error) {
-	n, err = c.connection.Read(b)
+func (c *TCPChannel) WaitForClient() {
+	if c.is_client == false && c.client == nil {
+		c.mutex.Lock()
+		c.cond.Wait()
+		c.mutex.Unlock()
+	}
+}
+
+func (c *TCPChannel) Read(b []byte) (n int, err error) {
+	if c.is_client == false {
+		c.WaitForClient()
+		n, err = c.client.Read(b)
+	} else {
+		n, err = c.connection.Read(b)
+	}
+
 	if n > 0 {
 		c.stats.TotalRead += n
 	}
 	return n, err
 }
 
-func (c *TCPClient) Write(b []byte) (n int, err error) {
-	n, err = c.connection.Write(b)
+func (c *TCPChannel) Write(b []byte) (n int, err error) {
+	if c.is_client == false {
+		c.WaitForClient()
+		n, err = c.client.Write(b)
+	} else {
+		n, err = c.connection.Write(b)
+	}
+
 	if n > 0 {
 		c.stats.TotalWrote += n
 	}
 	return n, err
 }
 
-func (c *TCPClient) Stats() Stats {
+func (c *TCPChannel) Stats() Stats {
 	return c.stats
 }

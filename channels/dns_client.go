@@ -63,7 +63,7 @@ func (c *DNSClient) Description() string {
 	return "Write data as DNS queries ( examples: dnsclient:example.com / dnsclient:example.com@resolver-ip will use <hex sequence number + hex chunk>.example.com for exfiltration )."
 }
 
-func (c *DNSClient) SetArgs(args string) error {
+func (c *DNSClient) Setup(direction Direction, args string) error {
 	if strings.Contains(args, "@") {
 		parts := strings.SplitN(args, "@", 2)
 		if len(parts) != 2 {

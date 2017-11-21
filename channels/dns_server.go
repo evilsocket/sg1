@@ -82,7 +82,7 @@ func (c *DNSServer) GetData() []byte {
 	return c.data
 }
 
-func (c *DNSServer) SetArgs(args string) error {
+func (c *DNSServer) Setup(direction Direction, args string) error {
 	if args != "" {
 		c.server.Addr = args
 	}

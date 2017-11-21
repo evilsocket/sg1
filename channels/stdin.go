@@ -47,7 +47,7 @@ func (c *STDIN) Description() string {
 	return "Read data from standard input."
 }
 
-func (c *STDIN) SetArgs(args string) error {
+func (c *STDIN) Setup(direction Direction, args string) error {
 	return nil
 }
 

@@ -26,6 +26,13 @@
  */
 package channels
 
+type Direction int
+
+const (
+	INPUT_CHANNEL Direction = iota
+	OUTPUT_CHANNEL
+)
+
 type Stats struct {
 	TotalRead  int
 	TotalWrote int
@@ -34,7 +41,7 @@ type Stats struct {
 type Channel interface {
 	Name() string
 	Description() string
-	SetArgs(args string) error
+	Setup(direction Direction, args string) error
 	Start() error
 
 	HasReader() bool

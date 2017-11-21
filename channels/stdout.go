@@ -47,7 +47,7 @@ func (c *STDOUT) Description() string {
 	return "Write data to standard output."
 }
 
-func (c *STDOUT) SetArgs(args string) error {
+func (c *STDOUT) Setup(direction Direction, args string) error {
 	return nil
 }
 

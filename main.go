@@ -50,8 +50,9 @@ func init() {
 
 	channels.Register(channels.NewSTDINChannel())
 	channels.Register(channels.NewSTDOUTChannel())
-	channels.Register(channels.NewTCPClientChannel())
-	channels.Register(channels.NewTCPServerChannel())
+	//channels.Register(channels.NewTCPClientChannel())
+	//channels.Register(channels.NewTCPServerChannel())
+	channels.Register(channels.NewTCPChannel())
 	channels.Register(channels.NewDNSClientChannel())
 	channels.Register(channels.NewDNSServerChannel())
 
@@ -119,11 +120,11 @@ func main() {
 	var module modules.Module
 	var err error
 
-	if input, err = channels.Factory(from, true); err != nil {
+	if input, err = channels.Factory(from, channels.INPUT_CHANNEL); err != nil {
 		onError(err)
 	}
 
-	if output, err = channels.Factory(to, false); err != nil {
+	if output, err = channels.Factory(to, channels.OUTPUT_CHANNEL); err != nil {
 		onError(err)
 	}
 
