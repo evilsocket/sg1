@@ -74,9 +74,14 @@ func (m *Exec) Run(input, output channels.Channel) error {
 
 		// fmt.Printf("Parsing and executing command line (%d bytes) '%s'.\n", n, cmdline)
 
-		parts := strings.Fields(cmdline)
-		cmd := parts[0]
-		args := parts[1:len(parts)]
+		cmd := ""
+		args := []string{}
+
+		if cmdline != "" {
+			parts := strings.Fields(cmdline)
+			cmd = parts[0]
+			args = parts[1:len(parts)]
+		}
 
 		path, err := exec.LookPath(cmd)
 		if err != nil {
