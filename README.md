@@ -22,16 +22,13 @@ You can contribute by:
 
 ## Examples
 
+Quick and dirty AES encrypted chat over TCP:
+![aes-tcp](https://pbs.twimg.com/media/DPHAlOXWAAA9kKv.jpg:large)
+
 Encrypting data in AES and exfiltrate it via DNS requests:
 ![aes-dns](https://pbs.twimg.com/media/DPHsSLwWkAEbg7P.jpg:large)
 
 With bouncing to another host:
 ![bounce](https://pbs.twimg.com/media/DPHtBocWsAAyDVN.jpg:large)
-
-Quick and dirty AES encrypted chat over TCP:
-![aes-tcp](https://pbs.twimg.com/media/DPHAlOXWAAA9kKv.jpg:large)
-
-AES encrypted chat over DNS:
-![aes-tcp](https://pbs.twimg.com/media/DPHegHLWsAErZtO.jpg:large)
 
 Just use `sg1 -h` to see a list of available channels and modules, try to pipe them and see what happens, you can also transfer files and make requests "bounce" to several machines with random AES keys ^_^
