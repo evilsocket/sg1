@@ -32,6 +32,7 @@ import (
 )
 
 type STDOUT struct {
+	stats Stats
 }
 
 func NewSTDOUTChannel() *STDOUT {
@@ -67,5 +68,13 @@ func (c *STDOUT) HasWriter() bool {
 }
 
 func (c *STDOUT) Write(b []byte) (n int, err error) {
-	return os.Stdout.Write(b)
+	n, err = os.Stdout.Write(b)
+	if n > 0 {
+		c.stats.TotalWrote += n
+	}
+	return n, err
+}
+
+func (c *STDOUT) Stats() Stats {
+	return c.stats
 }

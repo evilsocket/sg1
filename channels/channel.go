@@ -26,6 +26,11 @@
  */
 package channels
 
+type Stats struct {
+	TotalRead  int
+	TotalWrote int
+}
+
 type Channel interface {
 	Name() string
 	Description() string
@@ -37,4 +42,6 @@ type Channel interface {
 
 	HasWriter() bool
 	Write(b []byte) (n int, err error)
+
+	Stats() Stats
 }

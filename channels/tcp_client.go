@@ -33,6 +33,7 @@ import (
 type TCPClient struct {
 	address    *net.TCPAddr
 	connection *net.TCPConn
+	stats      Stats
 }
 
 func NewTCPClientChannel() *TCPClient {
@@ -75,9 +76,21 @@ func (c *TCPClient) HasWriter() bool {
 }
 
 func (c *TCPClient) Read(b []byte) (n int, err error) {
-	return c.connection.Read(b)
+	n, err = c.connection.Read(b)
+	if n > 0 {
+		c.stats.TotalRead += n
+	}
+	return n, err
 }
 
 func (c *TCPClient) Write(b []byte) (n int, err error) {
-	return c.connection.Write(b)
+	n, err = c.connection.Write(b)
+	if n > 0 {
+		c.stats.TotalWrote += n
+	}
+	return n, err
+}
+
+func (c *TCPClient) Stats() Stats {
+	return c.stats
 }

@@ -43,6 +43,7 @@ type DNSClient struct {
 	resolver string
 	client   *dns.Client
 	seqn     uint32
+	stats    Stats
 }
 
 func NewDNSClientChannel() *DNSClient {
@@ -83,6 +84,7 @@ func (c *DNSClient) SetArgs(args string) error {
 }
 
 func (c *DNSClient) Start() error {
+	fmt.Fprintf(os.Stderr, "Performing DNS lookups ...\n")
 	return nil
 }
 
@@ -98,11 +100,14 @@ func (c *DNSClient) HasWriter() bool {
 	return true
 }
 
-func (c *DNSClient) Lookup(fqdn string) {
-	fmt.Fprintf(os.Stderr, "Resolving %s (seqn=0x%x) ...\n", fqdn, c.seqn)
+func (c *DNSClient) Lookup(fqdn string) error {
+	// fmt.Fprintf(os.Stderr, "Resolving %s (seqn=0x%x) ...\n", fqdn, c.seqn)
 
 	if c.client == nil {
-		net.LookupHost(fqdn)
+		if _, err := net.LookupHost(fqdn); err != nil {
+			return err
+		}
+
 	} else {
 		m1 := new(dns.Msg)
 		m1.Id = dns.Id()
@@ -111,9 +116,11 @@ func (c *DNSClient) Lookup(fqdn string) {
 		m1.Question[0] = dns.Question{fqdn + ".", dns.TypeA, dns.ClassINET}
 
 		if _, _, err := c.client.Exchange(m1, c.resolver); err != nil {
-			fmt.Println(err)
+			return err
 		}
 	}
+
+	return nil
 }
 
 func (c *DNSClient) Write(b []byte) (n int, err error) {
@@ -148,7 +155,11 @@ func (c *DNSClient) Write(b []byte) (n int, err error) {
 
 		fqdn := fmt.Sprintf("%s.%s", hex.EncodeToString(chunk), c.domain)
 
-		c.Lookup(fqdn)
+		if err := c.Lookup(fqdn); err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+		} else {
+			c.stats.TotalWrote += size
+		}
 
 		done += size
 		left -= size
@@ -156,4 +167,8 @@ func (c *DNSClient) Write(b []byte) (n int, err error) {
 	}
 
 	return done, nil
+}
+
+func (c *DNSClient) Stats() Stats {
+	return c.stats
 }

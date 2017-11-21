@@ -32,6 +32,7 @@ import (
 )
 
 type STDIN struct {
+	stats Stats
 }
 
 func NewSTDINChannel() *STDIN {
@@ -59,7 +60,11 @@ func (c *STDIN) HasReader() bool {
 }
 
 func (c *STDIN) Read(b []byte) (n int, err error) {
-	return os.Stdin.Read(b)
+	n, err = os.Stdin.Read(b)
+	if n > 0 {
+		c.stats.TotalRead += n
+	}
+	return n, err
 }
 
 func (c *STDIN) HasWriter() bool {
@@ -68,4 +73,8 @@ func (c *STDIN) HasWriter() bool {
 
 func (c *STDIN) Write(b []byte) (n int, err error) {
 	return 0, fmt.Errorf("stdin can't be used for writing.")
+}
+
+func (c *STDIN) Stats() Stats {
+	return c.stats
 }

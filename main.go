@@ -31,6 +31,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"time"
 
 	"github.com/evilsocket/sg1/channels"
 	"github.com/evilsocket/sg1/modules"
@@ -85,6 +86,28 @@ func onError(err error) {
 	os.Exit(1)
 }
 
+const (
+	KB = 1024
+	MB = 1024 * 1024
+	GB = 1024 * 1024 * 1024
+)
+
+func formatBytes(bytes int) string {
+	if bytes < KB {
+		return fmt.Sprintf("%d B", bytes)
+	} else if bytes < MB {
+		return fmt.Sprintf("%d KB", bytes/KB)
+	} else if bytes < GB {
+		return fmt.Sprintf("%d MB", bytes/MB)
+	} else {
+		return fmt.Sprintf("%d GB", bytes/GB)
+	}
+}
+
+func formatSpeed(speed float64) string {
+	return fmt.Sprintf("%s/s", formatBytes(int(speed)))
+}
+
 func main() {
 	fmt.Fprintf(os.Stderr, "%s v%s ( built on %s for %s %s )\n\n", APP_NAME, APP_VERSION, APP_BUILD_DATE, runtime.GOOS, runtime.GOARCH)
 
@@ -117,7 +140,27 @@ func main() {
 		onError(err)
 	}
 
+	start := time.Now()
+
 	if err = module.Run(input, output); err != nil {
 		fmt.Println(err)
+	} else {
+		elapsed := time.Since(start)
+		es := elapsed.Seconds()
+		speed := float64(0.0)
+		read := input.Stats().TotalRead
+		wrote := output.Stats().TotalWrote
+
+		if read < wrote {
+			speed = float64(read) / es
+		} else {
+			speed = float64(wrote) / es
+		}
+
+		fmt.Fprintf(os.Stderr, "\n\n")
+		fmt.Fprintf(os.Stderr, "Total read    : %s\n", formatBytes(read))
+		fmt.Fprintf(os.Stderr, "Total written : %s\n", formatBytes(wrote))
+		fmt.Fprintf(os.Stderr, "Time elapsed  : %s\n", elapsed)
+		fmt.Fprintf(os.Stderr, "Speed         : %s\n", formatSpeed(speed))
 	}
 }

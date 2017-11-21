@@ -37,6 +37,7 @@ type TCPServer struct {
 	mutex      *sync.Mutex
 	cond       *sync.Cond
 	connection net.Conn
+	stats      Stats
 }
 
 func NewTCPServerChannel() *TCPServer {
@@ -105,10 +106,22 @@ func (c *TCPServer) WaitForClient() {
 
 func (c *TCPServer) Read(b []byte) (n int, err error) {
 	c.WaitForClient()
-	return c.connection.Read(b)
+	n, err = c.connection.Read(b)
+	if n > 0 {
+		c.stats.TotalRead += n
+	}
+	return n, err
 }
 
 func (c *TCPServer) Write(b []byte) (n int, err error) {
 	c.WaitForClient()
-	return c.connection.Write(b)
+	n, err = c.connection.Write(b)
+	if n > 0 {
+		c.stats.TotalWrote += n
+	}
+	return n, err
+}
+
+func (c *TCPServer) Stats() Stats {
+	return c.stats
 }

@@ -42,6 +42,7 @@ type DNSServer struct {
 	mutex *sync.Mutex
 	data  []byte
 	cond  *sync.Cond
+	stats Stats
 }
 
 func NewDNSServerChannel() *DNSServer {
@@ -101,6 +102,7 @@ func (c *DNSServer) SetArgs(args string) error {
 							// TODO: Check sequence number
 							_ = binary.BigEndian.Uint32(seqn_raw)
 
+							c.stats.TotalRead += len(data_raw)
 							c.SetData(data_raw)
 						}
 					}
@@ -155,4 +157,8 @@ func (c *DNSServer) HasWriter() bool {
 
 func (c *DNSServer) Write(b []byte) (n int, err error) {
 	return 0, fmt.Errorf("dnsserver can't be used for writing.")
+}
+
+func (c *DNSServer) Stats() Stats {
+	return c.stats
 }
