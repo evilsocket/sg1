@@ -38,15 +38,15 @@ import (
 )
 
 var (
-	from        = "stdin"
-	to          = "stdout"
-	module_name = ""
+	from        = "console"
+	to          = "console"
+	module_name = "raw"
 )
 
 func init() {
-	flag.StringVar(&from, "in", "console", "Read input data from this channel.")
-	flag.StringVar(&to, "out", "console", "Write output data to this channel.")
-	flag.StringVar(&module_name, "module", "raw", "Module name to use.")
+	flag.StringVar(&from, "in", from, "Read input data from this channel.")
+	flag.StringVar(&to, "out", to, "Write output data to this channel.")
+	flag.StringVar(&module_name, "module", module_name, "Module name to use.")
 
 	channels.Register(channels.NewConsoleChannel())
 	channels.Register(channels.NewTCPChannel())
