@@ -30,6 +30,7 @@ type Channel interface {
 	Name() string
 	Description() string
 	SetArgs(args string) error
+	Start() error
 
 	HasReader() bool
 	Read(b []byte) (n int, err error)

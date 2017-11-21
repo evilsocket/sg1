@@ -86,14 +86,6 @@ func (c *DNSServer) SetArgs(args string) error {
 		c.server.Addr = args
 	}
 
-	fmt.Fprintf(os.Stderr, "Running DNS server on '%s' ...\n", c.server.Addr)
-
-	go func() {
-		if err := c.server.ListenAndServe(); err != nil {
-			panic(err)
-		}
-	}()
-
 	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
 		// TODO: This is horrible, refactor with proper packet parsing.
 		if len(r.Question) == 1 {
@@ -120,6 +112,18 @@ func (c *DNSServer) SetArgs(args string) error {
 		m.SetReply(r)
 		w.WriteMsg(m)
 	})
+
+	return nil
+}
+
+func (c *DNSServer) Start() error {
+	fmt.Fprintf(os.Stderr, "Running DNS server on '%s' ...\n", c.server.Addr)
+
+	go func() {
+		if err := c.server.ListenAndServe(); err != nil {
+			panic(err)
+		}
+	}()
 
 	return nil
 }

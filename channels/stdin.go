@@ -50,6 +50,10 @@ func (c *STDIN) SetArgs(args string) error {
 	return nil
 }
 
+func (c *STDIN) Start() error {
+	return nil
+}
+
 func (c *STDIN) HasReader() bool {
 	return true
 }

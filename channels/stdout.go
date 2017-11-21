@@ -50,6 +50,10 @@ func (c *STDOUT) SetArgs(args string) error {
 	return nil
 }
 
+func (c *STDOUT) Start() error {
+	return nil
+}
+
 func (c *STDOUT) HasReader() bool {
 	return false
 }

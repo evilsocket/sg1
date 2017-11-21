@@ -55,6 +55,10 @@ func (c *TCPClient) SetArgs(args string) (err error) {
 		return err
 	}
 
+	return nil
+}
+
+func (c *TCPClient) Start() (err error) {
 	if c.connection, err = net.DialTCP("tcp", nil, c.address); err != nil {
 		return err
 	}

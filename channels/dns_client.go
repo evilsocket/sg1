@@ -82,6 +82,10 @@ func (c *DNSClient) SetArgs(args string) error {
 	return nil
 }
 
+func (c *DNSClient) Start() error {
+	return nil
+}
+
 func (c *DNSClient) HasReader() bool {
 	return false
 }

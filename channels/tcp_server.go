@@ -63,6 +63,10 @@ func (c *TCPServer) SetArgs(args string) (err error) {
 		return err
 	}
 
+	return nil
+}
+
+func (c *TCPServer) Start() (err error) {
 	if c.listener, err = net.ListenTCP("tcp", c.address); err != nil {
 		return err
 	}

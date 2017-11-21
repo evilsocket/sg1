@@ -109,6 +109,14 @@ func main() {
 
 	fmt.Fprintf(os.Stderr, "  %s --> [%s] --> %s\n\n", input.Name(), module.Name(), output.Name())
 
+	if err = input.Start(); err != nil {
+		onError(err)
+	}
+
+	if err = output.Start(); err != nil {
+		onError(err)
+	}
+
 	if err = module.Run(input, output); err != nil {
 		fmt.Println(err)
 	}
