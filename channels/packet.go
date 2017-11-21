@@ -53,12 +53,18 @@ func DecodePacket(buffer []byte) (p *Packet, err error) {
 
 	seqn_buf := buffer[0:4]
 	size_buf := buffer[4:5]
-	data_buf := buffer[5:]
+	max_size := len(buffer) - 4 - 1
 
 	// TODO: Check sequence number
-	// TODO: Check size vs buffer len
 	seqn := binary.BigEndian.Uint32(seqn_buf)
+
+	data_buf := make([]byte, 0)
 	size := uint8(size_buf[0])
+	if int(size) > max_size {
+		return nil, fmt.Errorf("Data size %d is more than the %d bytes of available payload.", size, max_size)
+	} else if size > 0 {
+		data_buf = buffer[5:]
+	}
 
 	return NewPacket(seqn, size, data_buf[:size]), nil
 }
