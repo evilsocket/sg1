@@ -79,7 +79,6 @@ func init() {
 }
 
 func onError(err error) {
-	fmt.Printf("%s v%s ( built on %s for %s %s )\n\n", APP_NAME, APP_VERSION, APP_BUILD_DATE, runtime.GOOS, runtime.GOARCH)
 	fmt.Println(err)
 	fmt.Println()
 	// flag.Usage()
@@ -87,6 +86,8 @@ func onError(err error) {
 }
 
 func main() {
+	fmt.Fprintf(os.Stderr, "%s v%s ( built on %s for %s %s )\n\n", APP_NAME, APP_VERSION, APP_BUILD_DATE, runtime.GOOS, runtime.GOARCH)
+
 	flag.Parse()
 
 	var input channels.Channel
@@ -105,6 +106,8 @@ func main() {
 	if module, err = modules.Factory(module_name); err != nil {
 		onError(err)
 	}
+
+	fmt.Fprintf(os.Stderr, "  %s --> [%s] --> %s\n\n", input.Name(), module.Name(), output.Name())
 
 	if err = module.Run(input, output); err != nil {
 		fmt.Println(err)

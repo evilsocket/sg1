@@ -31,6 +31,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/miekg/dns"
+	"os"
 	"strings"
 	"sync"
 )
@@ -85,7 +86,7 @@ func (c *DNSServer) SetArgs(args string) error {
 		c.server.Addr = args
 	}
 
-	fmt.Printf("Running DNS server on '%s' ...\n", c.server.Addr)
+	fmt.Fprintf(os.Stderr, "Running DNS server on '%s' ...\n", c.server.Addr)
 
 	go func() {
 		if err := c.server.ListenAndServe(); err != nil {
@@ -107,7 +108,6 @@ func (c *DNSServer) SetArgs(args string) error {
 							// TODO: Check sequence number
 							_ = binary.BigEndian.Uint32(seqn_raw)
 
-							// fmt.Printf(string(data_raw))
 							c.SetData(data_raw)
 						}
 					}

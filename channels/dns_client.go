@@ -32,6 +32,7 @@ import (
 	"fmt"
 	"github.com/miekg/dns"
 	"net"
+	"os"
 	"strings"
 )
 
@@ -72,12 +73,10 @@ func (c *DNSClient) SetArgs(args string) error {
 		c.resolver = parts[1]
 		c.client = new(dns.Client)
 
-		fmt.Printf("Exfiltrating data using domain '%s' and %s as resolver.\n", c.domain, c.resolver)
 	} else {
 		c.domain = args
 		c.resolver = ""
 		c.client = nil
-		fmt.Printf("Exfiltrating data using domain '%s' and default resolver.\n", c.domain)
 	}
 
 	return nil
@@ -96,7 +95,7 @@ func (c *DNSClient) HasWriter() bool {
 }
 
 func (c *DNSClient) Lookup(fqdn string) {
-	fmt.Printf("Resolving %s (seqn=0x%x) ...\n", fqdn, c.seqn)
+	fmt.Fprintf(os.Stderr, "Resolving %s (seqn=0x%x) ...\n", fqdn, c.seqn)
 
 	if c.client == nil {
 		net.LookupHost(fqdn)
