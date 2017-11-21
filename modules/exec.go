@@ -27,7 +27,9 @@
 package modules
 
 import (
+	"fmt"
 	"github.com/evilsocket/sg1/channels"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -67,21 +69,31 @@ func (m *Exec) Run(input, output channels.Channel) error {
 
 		var cmdout []byte
 
-		cmdline := strings.Trim(string(buff[:n]), " \t\r\n")
+		cmdline := string(buff[:n])
+		cmdline = strings.Trim(cmdline, " \t\r\n")
+
+		// fmt.Printf("Parsing and executing command line (%d bytes) '%s'.\n", n, cmdline)
 
 		parts := strings.Fields(cmdline)
 		cmd := parts[0]
 		args := parts[1:len(parts)]
 
-		raw, err := exec.Command(cmd, args...).CombinedOutput()
+		path, err := exec.LookPath(cmd)
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error while looking path of '%s': %s.\n", cmd, err)
 			cmdout = []byte(err.Error())
 		} else {
-			cmdout = []byte(raw)
-		}
+			raw, err := exec.Command(path, args...).CombinedOutput()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error while executing '%s %s': %s.\n", path, args, err)
+				cmdout = []byte(err.Error())
+			} else {
+				cmdout = []byte(raw)
+			}
 
-		if _, err = output.Write(cmdout); err != nil {
-			return err
+			if _, err = output.Write(cmdout); err != nil {
+				return err
+			}
 		}
 	}
 

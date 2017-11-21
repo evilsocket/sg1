@@ -42,7 +42,7 @@ var (
 	DNSChunkSize         = 16
 	DNSHostAddressParser = regexp.MustCompile("^([^@]+)@([^:]+):([\\d]+)$")
 	DNSAddressParser     = regexp.MustCompile("^([^:]+):([\\d]+)$")
-	DNSQuestionParser    = regexp.MustCompile("^([a-fA-F0-9]{40})\\.(.+)\\.$")
+	DNSQuestionParser    = regexp.MustCompile("^([a-fA-F0-9]{42})\\.(.+)\\.$")
 )
 
 type DNSClient struct {
@@ -125,20 +125,35 @@ func (c *DNSChannel) setupServer(args string) error {
 
 	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
 		if len(r.Question) == 1 {
+			// fmt.Fprintf(os.Stderr, "Got question: %s\n", r.Question[0].Name)
 			if m := DNSQuestionParser.FindStringSubmatch(r.Question[0].Name); len(m) == 3 {
 				chunk := m[1]
 				domain := m[2]
+				// fmt.Fprintf(os.Stderr, "%s", chunk)
 				if c.domain == "" || c.domain == domain {
 					seqn_hex := chunk[0:8]
-					data_hex := chunk[8:]
+					size_hex := chunk[8:10]
+					data_hex := chunk[10:]
+
+					// fmt.Fprintf(os.Stderr, "  seqn_hex=%s size_hex=%s data_hex=%s\n", seqn_hex, size_hex, data_hex)
 
 					if seqn_raw, err := hex.DecodeString(seqn_hex); err == nil {
-						if data_raw, err := hex.DecodeString(data_hex); err == nil {
-							// TODO: Check sequence number
-							_ = binary.BigEndian.Uint32(seqn_raw)
+						if size_raw, err := hex.DecodeString(size_hex); err == nil {
+							if data_raw, err := hex.DecodeString(data_hex); err == nil {
+								// TODO: Check sequence number
+								_ = binary.BigEndian.Uint32(seqn_raw)
+								size := int(size_raw[0])
+								// TODO: Check size vs buffer len
 
-							c.stats.TotalRead += len(data_raw)
-							c.SetData(data_raw)
+								// fmt.Fprintf(os.Stderr, "Size = %d\n", size)
+
+								final := data_raw[:size]
+
+								// fmt.Fprintf(os.Stderr, "size=%d data='%s'\n", size, string(data_raw))
+
+								c.stats.TotalRead += len(final)
+								c.SetData(final)
+							}
 						}
 					}
 				}
@@ -238,11 +253,11 @@ func (c *DNSChannel) Read(b []byte) (n int, err error) {
 		b[i] = c
 	}
 
-	return len(b), nil
+	return len(data), nil
 }
 
 func (c *DNSChannel) Lookup(fqdn string) error {
-	// fmt.Fprintf(os.Stderr, "Resolving %s (seqn=0x%x) ...\n", fqdn, c.seqn)
+	// fmt.Fprintf(os.Stderr, "Resolving %s (seqn=0x%x) ...\n", fqdn, c.client.seqn)
 
 	if c.client.client == nil {
 		if _, err := net.LookupHost(fqdn); err != nil {
@@ -296,6 +311,11 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 		seqn_buffer := make([]byte, 4)
 		binary.BigEndian.PutUint32(seqn_buffer, c.client.seqn)
 
+		size_buffer := make([]byte, 1)
+		size_buffer[0] = byte(size & 0xff)
+		// fmt.Fprintf(os.Stderr, "size=%d\n", size)
+
+		chunk = append(size_buffer, chunk...)
 		chunk = append(seqn_buffer, chunk...)
 
 		fqdn := fmt.Sprintf("%s.%s", hex.EncodeToString(chunk), c.domain)
