@@ -57,7 +57,7 @@ func (m *AES) Name() string {
 }
 
 func (m *AES) Description() string {
-	return "Read from input encrypt or decrypt in AES and write to output ( use -aes-key and -aes-mode arguments )."
+	return "Read from input, encrypt or decrypt in AES and write to output ( use -aes-key and -aes-mode arguments )."
 }
 
 func (m *AES) Register() error {
