@@ -115,6 +115,25 @@ func (c *DNSChannel) GetData() []byte {
 	return c.server.data
 }
 
+func parseQuestion(r *dns.Msg) (chunk []byte, domain string, err error) {
+	if len(r.Question) != 1 {
+		return nil, "", fmt.Errorf("Unexpected number of questions.")
+	}
+
+	m := DNSQuestionParser.FindStringSubmatch(r.Question[0].Name)
+	if len(m) != 3 {
+		return nil, "", fmt.Errorf("Could not parse DNS query question.")
+	}
+
+	chunk_hex := m[1]
+	domain = m[2]
+	if chunk, err = hex.DecodeString(chunk_hex); err != nil {
+		return nil, "", fmt.Errorf("Could not decode hex chunk.")
+	}
+
+	return chunk, domain, nil
+}
+
 func (c *DNSChannel) setupServer(args string) error {
 	c.is_client = false
 
@@ -123,21 +142,15 @@ func (c *DNSChannel) setupServer(args string) error {
 	}
 
 	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
-		if len(r.Question) == 1 {
-			// fmt.Fprintf(os.Stderr, "Got question: %s\n", r.Question[0].Name)
-			if m := DNSQuestionParser.FindStringSubmatch(r.Question[0].Name); len(m) == 3 {
-				chunk := m[1]
-				domain := m[2]
-				// fmt.Fprintf(os.Stderr, "%s", chunk)
-				if c.domain == "" || c.domain == domain {
-					if buff, err := hex.DecodeString(chunk); err == nil {
-						if packet, err := DecodePacket(buff); err == nil {
-							c.stats.TotalRead += int(packet.DataSize)
-							c.SetData(packet.Data)
-						}
-					}
+		if chunk, domain, err := parseQuestion(r); err == nil {
+			if c.domain == "" || c.domain == domain {
+				if packet, err := DecodePacket(chunk); err == nil {
+					c.stats.TotalRead += int(packet.DataSize)
+					c.SetData(packet.Data)
 				}
 			}
+		} else {
+			fmt.Fprintf(os.Stderr, "Error: %s.\n", err)
 		}
 
 		m := new(dns.Msg)
