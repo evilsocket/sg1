@@ -27,47 +27,50 @@
 package channels
 
 import (
-	"fmt"
 	"os"
 )
 
-type STDOUT struct {
+type Console struct {
 	stats Stats
 }
 
-func NewSTDOUTChannel() *STDOUT {
-	return &STDOUT{}
+func NewConsoleChannel() *Console {
+	return &Console{}
 }
 
-func (c *STDOUT) Name() string {
-	return "stdout"
+func (c *Console) Name() string {
+	return "console"
 }
 
-func (c *STDOUT) Description() string {
-	return "Write data to standard output."
+func (c *Console) Description() string {
+	return "Read data from standard input and write to standard output."
 }
 
-func (c *STDOUT) Setup(direction Direction, args string) error {
+func (c *Console) Setup(direction Direction, args string) error {
 	return nil
 }
 
-func (c *STDOUT) Start() error {
+func (c *Console) Start() error {
 	return nil
 }
 
-func (c *STDOUT) HasReader() bool {
-	return false
-}
-
-func (c *STDOUT) Read(b []byte) (n int, err error) {
-	return 0, fmt.Errorf("stdout can't be used for reading.")
-}
-
-func (c *STDOUT) HasWriter() bool {
+func (c *Console) HasReader() bool {
 	return true
 }
 
-func (c *STDOUT) Write(b []byte) (n int, err error) {
+func (c *Console) HasWriter() bool {
+	return true
+}
+
+func (c *Console) Read(b []byte) (n int, err error) {
+	n, err = os.Stdin.Read(b)
+	if n > 0 {
+		c.stats.TotalRead += n
+	}
+	return n, err
+}
+
+func (c *Console) Write(b []byte) (n int, err error) {
 	n, err = os.Stdout.Write(b)
 	if n > 0 {
 		c.stats.TotalWrote += n
@@ -75,6 +78,6 @@ func (c *STDOUT) Write(b []byte) (n int, err error) {
 	return n, err
 }
 
-func (c *STDOUT) Stats() Stats {
+func (c *Console) Stats() Stats {
 	return c.stats
 }

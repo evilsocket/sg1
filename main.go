@@ -44,12 +44,11 @@ var (
 )
 
 func init() {
-	flag.StringVar(&from, "in", "stdin", "Read input data from this channel.")
-	flag.StringVar(&to, "out", "stdout", "Write output data to this channel.")
+	flag.StringVar(&from, "in", "console", "Read input data from this channel.")
+	flag.StringVar(&to, "out", "console", "Write output data to this channel.")
 	flag.StringVar(&module_name, "module", "raw", "Module name to use.")
 
-	channels.Register(channels.NewSTDINChannel())
-	channels.Register(channels.NewSTDOUTChannel())
+	channels.Register(channels.NewConsoleChannel())
 	channels.Register(channels.NewTCPChannel())
 	channels.Register(channels.NewDNSChannel())
 
