@@ -38,6 +38,8 @@ SG1 is a wanna be swiss army knife for data encryption, exfiltration and covert 
 
 **WORK IN PROGRESS, DON'T JUDGE**
 
+[![baby-gopher](https://raw.githubusercontent.com/drnic/babygopher-site/gh-pages/images/babygopher-badge.png)](http://www.babygopher.org) [![Go Report Card](https://goreportcard.com/badge/github.com/evilsocket/sg1)](https://goreportcard.com/report/github.com/evilsocket/sg1)
+
 ## Installation
 
     go get github.com/miekg/dns
