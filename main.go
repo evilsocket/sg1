@@ -50,16 +50,13 @@ func init() {
 
 	channels.Register(channels.NewSTDINChannel())
 	channels.Register(channels.NewSTDOUTChannel())
-	//channels.Register(channels.NewTCPClientChannel())
-	//channels.Register(channels.NewTCPServerChannel())
 	channels.Register(channels.NewTCPChannel())
-	// channels.Register(channels.NewDNSClientChannel())
-	// channels.Register(channels.NewDNSServerChannel())
 	channels.Register(channels.NewDNSChannel())
 
 	modules.Register(modules.NewRaw())
 	modules.Register(modules.NewBase64())
 	modules.Register(modules.NewAES())
+	modules.Register(modules.NewExec())
 
 	flag.Usage = func() {
 		fmt.Printf("Usage of sg1:\n\n")
