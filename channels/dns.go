@@ -237,7 +237,7 @@ func (c *DNSChannel) Read(b []byte) (n int, err error) {
 }
 
 func (c *DNSChannel) Lookup(fqdn string) error {
-	// fmt.Fprintf(os.Stderr, "Resolving %s (seqn=0x%x) ...\n", fqdn, c.client.seqn)
+	fmt.Fprintf(os.Stderr, "Resolving %s (seqn=0x%x) ...\n", fqdn, c.client.seqn)
 
 	if c.client.client == nil {
 		if _, err := net.LookupHost(fqdn); err != nil {
