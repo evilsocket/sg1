@@ -23,7 +23,7 @@ You can contribute by:
 ## Examples
 
 Encrypting data in AES and exfiltrate it via DNS requests:
-![aes-dns](https://pbs.twimg.com/media/DPG-9C2X4AADFcP.jpg:large)
+![aes-dns](https://pbs.twimg.com/media/DPHsSLwWkAEbg7P.jpg:large)
 
 Quick and dirty AES encrypted chat over TCP:
 ![aes-tcp](https://pbs.twimg.com/media/DPHAlOXWAAA9kKv.jpg:large)
