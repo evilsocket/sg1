@@ -69,7 +69,7 @@ type DNSChannel struct {
 func NewDNSChannel() *DNSChannel {
 	s := &DNSChannel{
 		is_client: true,
-		domain:    "",
+		domain:    "sg1.com",
 		address:   "",
 		port:      53,
 
