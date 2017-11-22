@@ -64,6 +64,9 @@ You can contribute by:
 
 ## Examples
 
+TLS client -> server session:
+![tls](https://pbs.twimg.com/media/DPPSi8KW4AIVDVo.jpg:large)
+
 Simple file exfiltration over DNS:
 ![file](https://pbs.twimg.com/media/DPH8KkAWsAE5rZZ.jpg:large)
 
