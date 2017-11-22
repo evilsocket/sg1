@@ -63,6 +63,12 @@ You can contribute by:
 
 ## Examples
 
+**Important Note**
+
+In case it is not obvious as I think, in the following examples you will always see 127.0.0.1, but that can be any ip, the tool is tunnelling data locally as a PoC but it also works among different computers on any network (as shown by one of the pictures).
+
+--
+
 TLS client -> server session:
 ![tls](https://pbs.twimg.com/media/DPPSi8KW4AIVDVo.jpg:large)
 
