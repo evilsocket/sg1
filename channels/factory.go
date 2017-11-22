@@ -46,6 +46,10 @@ func Register(channel Channel) error {
 		return fmt.Errorf("channel with name %s already registered.", channel_name)
 	}
 
+	if err := channel.Register(); err != nil {
+		return err
+	}
+
 	registered[channel_name] = channel
 
 	return nil

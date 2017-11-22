@@ -41,6 +41,7 @@ type Stats struct {
 type Channel interface {
 	Name() string
 	Description() string
+	Register() error
 	Setup(direction Direction, args string) error
 	Start() error
 

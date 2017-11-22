@@ -99,6 +99,10 @@ func (c *DNSChannel) Description() string {
 	return "As input, read data from incoming DNS requests (example server: dns:example.com@192.168.1.2:5353), as output write data as DNS requests (example client: dns:example.com@192.168.1.2:5353)."
 }
 
+func (c *DNSChannel) Register() error {
+	return nil
+}
+
 func (c *DNSChannel) SetData(data []byte) {
 	c.server.mutex.Lock()
 	defer c.server.mutex.Unlock()

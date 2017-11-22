@@ -27,26 +27,38 @@
 package channels
 
 import (
+	"crypto/tls"
+	"flag"
+	"fmt"
 	"net"
 	"sync"
 )
 
-type TCPChannel struct {
-	is_client  bool
-	address    *net.TCPAddr
-	connection *net.TCPConn
-	client     net.Conn
+type TLSChannel struct {
+	pem_file  string
+	key_file  string
+	address   string
+	is_client bool
+	config    tls.Config
+
+	connection *tls.Conn
 	listener   net.Listener
-	mutex      *sync.Mutex
-	cond       *sync.Cond
-	stats      Stats
+	client     net.Conn
+
+	mutex *sync.Mutex
+	cond  *sync.Cond
+	stats Stats
 }
 
-func NewTCPChannel() *TCPChannel {
-	s := &TCPChannel{
+func NewTLSChannel() *TLSChannel {
+	s := &TLSChannel{
+		pem_file:   "",
+		key_file:   "",
+		address:    "",
 		is_client:  true,
-		address:    nil,
 		connection: nil,
+		client:     nil,
+		listener:   nil,
 		mutex:      &sync.Mutex{},
 		cond:       nil,
 	}
@@ -55,19 +67,37 @@ func NewTCPChannel() *TCPChannel {
 	return s
 }
 
-func (c *TCPChannel) Name() string {
-	return "tcp"
+func (c *TLSChannel) Name() string {
+	return "tls"
 }
 
-func (c *TCPChannel) Description() string {
-	return "Read or write data on a TCP server (for input) or client (for output) connection ( example: tcp:127.0.0.1:8080 )."
+func (c *TLSChannel) Description() string {
+	return "Read or write data on a TLS server (for input) or client (for output) connection, requires --tls-key and --tls-pem parameters ( example: tls:127.0.0.1:8083 )."
 }
 
-func (c *TCPChannel) Register() error {
+func (c *TLSChannel) Register() error {
+	flag.StringVar(&c.pem_file, "tls-pem", "", "PEM file for TLS connection.")
+	flag.StringVar(&c.key_file, "tls-key", "", "KEY file for TLS connection.")
 	return nil
 }
 
-func (c *TCPChannel) Setup(direction Direction, args string) (err error) {
+func (c *TLSChannel) Setup(direction Direction, args string) (err error) {
+	if c.pem_file == "" {
+		return fmt.Errorf("No --tls-pem file specified.")
+	} else if c.key_file == "" {
+		return fmt.Errorf("No --tls-key file specified.")
+	}
+
+	cert, err := tls.LoadX509KeyPair(c.pem_file, c.key_file)
+	if err != nil {
+		return err
+	}
+
+	c.config = tls.Config{
+		Certificates:       []tls.Certificate{cert},
+		InsecureSkipVerify: true,
+	}
+
 	if direction == INPUT_CHANNEL {
 		c.is_client = false
 
@@ -75,20 +105,18 @@ func (c *TCPChannel) Setup(direction Direction, args string) (err error) {
 		c.is_client = true
 	}
 
-	if c.address, err = net.ResolveTCPAddr("tcp", args); err != nil {
-		return err
-	}
+	c.address = args
 
 	return nil
 }
 
-func (c *TCPChannel) Start() (err error) {
+func (c *TLSChannel) Start() (err error) {
 	if c.is_client {
-		if c.connection, err = net.DialTCP("tcp", nil, c.address); err != nil {
+		if c.connection, err = tls.Dial("tcp", c.address, &c.config); err != nil {
 			return err
 		}
 	} else {
-		if c.listener, err = net.ListenTCP("tcp", c.address); err != nil {
+		if c.listener, err = tls.Listen("tcp", c.address, &c.config); err != nil {
 			return err
 		}
 
@@ -109,15 +137,15 @@ func (c *TCPChannel) Start() (err error) {
 	return nil
 }
 
-func (c *TCPChannel) HasReader() bool {
+func (c *TLSChannel) HasReader() bool {
 	return true
 }
 
-func (c *TCPChannel) HasWriter() bool {
+func (c *TLSChannel) HasWriter() bool {
 	return true
 }
 
-func (c *TCPChannel) WaitForClient() {
+func (c *TLSChannel) WaitForClient() {
 	if c.is_client == false && c.client == nil {
 		c.mutex.Lock()
 		c.cond.Wait()
@@ -125,7 +153,7 @@ func (c *TCPChannel) WaitForClient() {
 	}
 }
 
-func (c *TCPChannel) Read(b []byte) (n int, err error) {
+func (c *TLSChannel) Read(b []byte) (n int, err error) {
 	if c.is_client == false {
 		c.WaitForClient()
 		n, err = c.client.Read(b)
@@ -139,7 +167,7 @@ func (c *TCPChannel) Read(b []byte) (n int, err error) {
 	return n, err
 }
 
-func (c *TCPChannel) Write(b []byte) (n int, err error) {
+func (c *TLSChannel) Write(b []byte) (n int, err error) {
 	if c.is_client == false {
 		c.WaitForClient()
 		n, err = c.client.Write(b)
@@ -153,6 +181,6 @@ func (c *TCPChannel) Write(b []byte) (n int, err error) {
 	return n, err
 }
 
-func (c *TCPChannel) Stats() Stats {
+func (c *TLSChannel) Stats() Stats {
 	return c.stats
 }

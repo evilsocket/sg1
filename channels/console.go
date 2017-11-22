@@ -42,6 +42,10 @@ func (c *Console) Name() string {
 	return "console"
 }
 
+func (c *Console) Register() error {
+	return nil
+}
+
 func (c *Console) Description() string {
 	return "Read data from standard input and write to standard output."
 }
