@@ -27,11 +27,21 @@
 package channels
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"flag"
 	"fmt"
+	"math/big"
 	"net"
+	"os"
 	"sync"
+	"time"
 )
 
 type TLSChannel struct {
@@ -72,7 +82,7 @@ func (c *TLSChannel) Name() string {
 }
 
 func (c *TLSChannel) Description() string {
-	return "Read or write data on a TLS server (for input) or client (for output) connection, requires --tls-key and --tls-pem parameters ( example: tls:127.0.0.1:8083 )."
+	return "Read or write data on a TLS server (for input) or client (for output) connection, if no --tls-key and --tls-pem parameters are passed it will take care of certificate generation ( example: tls:127.0.0.1:8083 )."
 }
 
 func (c *TLSChannel) Register() error {
@@ -81,14 +91,97 @@ func (c *TLSChannel) Register() error {
 	return nil
 }
 
-func (c *TLSChannel) Setup(direction Direction, args string) (err error) {
-	if c.pem_file == "" {
-		return fmt.Errorf("No --tls-pem file specified.")
-	} else if c.key_file == "" {
-		return fmt.Errorf("No --tls-key file specified.")
+func publicKey(priv interface{}) interface{} {
+	switch k := priv.(type) {
+	case *rsa.PrivateKey:
+		return &k.PublicKey
+
+	case *ecdsa.PrivateKey:
+		return &k.PublicKey
+
+	default:
+		return nil
+	}
+}
+
+func pemBlockForKey(priv interface{}) *pem.Block {
+	switch k := priv.(type) {
+	case *rsa.PrivateKey:
+		return &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(k)}
+
+	case *ecdsa.PrivateKey:
+		b, err := x509.MarshalECPrivateKey(k)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to marshal ECDSA private key: %v", err)
+			os.Exit(2)
+		}
+
+		return &pem.Block{Type: "EC PRIVATE KEY", Bytes: b}
+
+	default:
+		return nil
+	}
+}
+
+func (c *TLSChannel) getCertificate() (cert tls.Certificate, err error) {
+	if c.pem_file == "" || c.key_file == "" {
+		c.pem_file = "/tmp/sg1_cert.pem"
+		c.key_file = "/tmp/sg1_key.pem"
+
+		fmt.Fprintf(os.Stderr, "@ Generating P521 based certificate into %s (%s) ...\n", c.pem_file, c.key_file)
+
+		priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
+		if err != nil {
+			return cert, err
+		}
+
+		notBefore := time.Now()
+		notAfter := notBefore.Add(time.Duration(24) * time.Hour)
+		serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+
+		serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+		if err != nil {
+			return cert, err
+		}
+
+		template := x509.Certificate{
+			SerialNumber:          serialNumber,
+			Subject:               pkix.Name{Organization: []string{"SG1 Co"}},
+			NotBefore:             notBefore,
+			NotAfter:              notAfter,
+			KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+			ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			BasicConstraintsValid: true,
+		}
+
+		derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey(priv), priv)
+		if err != nil {
+			return cert, err
+		}
+
+		certOut, err := os.Create(c.pem_file)
+		if err != nil {
+			return cert, err
+		}
+		defer certOut.Close()
+
+		pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+
+		keyOut, err := os.OpenFile(c.key_file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+		if err != nil {
+			return cert, err
+		}
+		defer keyOut.Close()
+
+		pem.Encode(keyOut, pemBlockForKey(priv))
 	}
 
-	cert, err := tls.LoadX509KeyPair(c.pem_file, c.key_file)
+	fmt.Fprintf(os.Stderr, "@ Loading TLS certificate from %s (%s).\n\n", c.pem_file, c.key_file)
+	return tls.LoadX509KeyPair(c.pem_file, c.key_file)
+}
+
+func (c *TLSChannel) Setup(direction Direction, args string) (err error) {
+	cert, err := c.getCertificate()
 	if err != nil {
 		return err
 	}
