@@ -72,6 +72,9 @@ Simple file exfiltration over DNS:
 Quick and dirty AES encrypted chat over TCP:
 ![aes-tcp](https://pbs.twimg.com/media/DPHAlOXWAAA9kKv.jpg:large)
 
+Pastebin AES encrypted data tunnel:
+![pastebin](https://pbs.twimg.com/media/DPQl7zoXUAAIdQ9.jpg:large)
+
 Encrypting data in AES and exfiltrate it via DNS requests:
 ![aes-dns](https://pbs.twimg.com/media/DPHsSLwWkAEbg7P.jpg:large)
 
