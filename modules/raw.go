@@ -53,7 +53,7 @@ func (m *Raw) Register() error {
 func (m *Raw) Run(input, output channels.Channel, delay int) error {
 	var n int
 	var err error
-	var buff = make([]byte, 1024)
+	var buff = make([]byte, 1024*1024)
 
 	for {
 		if n, err = input.Read(buff); err != nil {

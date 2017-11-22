@@ -42,7 +42,7 @@ var (
 	DNSChunkSize         = 16
 	DNSHostAddressParser = regexp.MustCompile("^([^@]+)@([^:]+):([\\d]+)$")
 	DNSAddressParser     = regexp.MustCompile("^([^:]+):([\\d]+)$")
-	DNSQuestionParser    = regexp.MustCompile("^([a-fA-F0-9]{42})\\.(.+)\\.$")
+	DNSQuestionParser    = regexp.MustCompile("^([a-fA-F0-9]+)\\.(.+)\\.$")
 )
 
 type DNSClient struct {
@@ -288,7 +288,9 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 		return 0, fmt.Errorf("dns server can't be used for writing.")
 	}
 
-	// fmt.Printf("Writing %d bytes: '%s' -> %s...\n", len(b), string(b), hex.EncodeToString(b))
+	if c.verbose {
+		fmt.Fprintf(os.Stderr, "Writing %d bytes: '%s' -> %s...\n", len(b), string(b), hex.EncodeToString(b))
+	}
 
 	total_size := len(b)
 	left := total_size
@@ -312,7 +314,7 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 			}
 		}
 
-		packet := NewPacket(c.client.seqn, uint8(size&0xff), chunk)
+		packet := NewPacket(c.client.seqn, uint32(size), chunk)
 
 		fqdn := fmt.Sprintf("%s.%s", hex.EncodeToString(packet.Encode()), c.domain)
 

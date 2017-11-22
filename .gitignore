@@ -2,3 +2,4 @@
 build.go
 certs
 sg1
+get_pastebin_user_key.*

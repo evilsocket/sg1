@@ -28,16 +28,18 @@ package channels
 
 import (
 	"encoding/binary"
+	// "encoding/hex"
 	"fmt"
+	// "os"
 )
 
 type Packet struct {
 	SeqNumber uint32
-	DataSize  uint8
+	DataSize  uint32
 	Data      []byte
 }
 
-func NewPacket(seqn uint32, datasize uint8, data []byte) *Packet {
+func NewPacket(seqn uint32, datasize uint32, data []byte) *Packet {
 	return &Packet{
 		SeqNumber: seqn,
 		DataSize:  datasize,
@@ -52,36 +54,39 @@ func DecodePacket(buffer []byte) (p *Packet, err error) {
 	}
 
 	seqn_buf := buffer[0:4]
-	size_buf := buffer[4:5]
+	size_buf := buffer[4:8]
+	// fmt.Fprintf(os.Stderr, "seqn_buf=%s\nsize_buf=%s\n", hex.EncodeToString(seqn_buf), hex.EncodeToString(size_buf))
 	max_size := len(buffer) - p.HeaderSize()
 
 	// TODO: Check sequence number
 	seqn := binary.BigEndian.Uint32(seqn_buf)
+	size := binary.BigEndian.Uint32(size_buf)
 
 	data_buf := make([]byte, 0)
-	size := uint8(size_buf[0])
-	if int(size) > max_size {
+	if size > uint32(max_size) {
 		return nil, fmt.Errorf("Data size %d is more than the %d bytes of available payload.", size, max_size)
 	} else if size > 0 {
-		data_buf = buffer[5:]
+		data_buf = buffer[8:]
 	}
 
-	return NewPacket(seqn, size, data_buf[:size]), nil
+	size = uint32(len(data_buf))
+
+	return NewPacket(seqn, size, data_buf), nil
 }
 
 func (p *Packet) HeaderSize() int {
-	return 4 + 1
+	return 4 + 4
 }
 
 func (p *Packet) Encode() []byte {
 	seqn_buf := make([]byte, 4)
-	size_buf := make([]byte, 1)
+	size_buf := make([]byte, 4)
 
 	binary.BigEndian.PutUint32(seqn_buf, p.SeqNumber)
-	size_buf[0] = byte(p.DataSize & 0xff)
+	binary.BigEndian.PutUint32(seqn_buf, p.DataSize)
 
-	buffer := append(size_buf, p.Data...)
-	buffer = append(seqn_buf, buffer...)
+	buffer := append(seqn_buf, p.Data...)
+	buffer = append(size_buf, buffer...)
 
 	return buffer
 }

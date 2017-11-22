@@ -54,6 +54,7 @@ func init() {
 	channels.Register(channels.NewTCPChannel())
 	channels.Register(channels.NewTLSChannel())
 	channels.Register(channels.NewDNSChannel())
+	channels.Register(channels.NewPastebinChannel())
 
 	modules.Register(modules.NewRaw())
 	modules.Register(modules.NewBase64())
@@ -164,5 +165,6 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Total written : %s\n", formatBytes(wrote))
 		fmt.Fprintf(os.Stderr, "Time elapsed  : %s\n", elapsed)
 		fmt.Fprintf(os.Stderr, "Speed         : %s\n", formatSpeed(bps))
+		fmt.Fprintf(os.Stderr, "\n")
 	}
 }
