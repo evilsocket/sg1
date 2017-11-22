@@ -123,25 +123,21 @@ func pemBlockForKey(priv interface{}) *pem.Block {
 	}
 }
 
-func (c *TLSChannel) getCertificate() (cert tls.Certificate, err error) {
+func (c *TLSChannel) getCertificateConfig() (conf tls.Config, err error) {
 	if c.pem_file == "" || c.key_file == "" {
-		c.pem_file = "/tmp/sg1_cert.pem"
-		c.key_file = "/tmp/sg1_key.pem"
-
-		fmt.Fprintf(os.Stderr, "@ Generating P521 based certificate into %s (%s) ...\n", c.pem_file, c.key_file)
+		fmt.Fprintf(os.Stderr, "Generating new ECDSA certificate ...\n\n")
 
 		priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 		if err != nil {
-			return cert, err
+			return conf, err
 		}
 
 		notBefore := time.Now()
 		notAfter := notBefore.Add(time.Duration(24) * time.Hour)
 		serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-
 		serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 		if err != nil {
-			return cert, err
+			return conf, err
 		}
 
 		template := x509.Certificate{
@@ -149,46 +145,47 @@ func (c *TLSChannel) getCertificate() (cert tls.Certificate, err error) {
 			Subject:               pkix.Name{Organization: []string{"SG1 Co"}},
 			NotBefore:             notBefore,
 			NotAfter:              notAfter,
-			KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-			ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+			ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 			BasicConstraintsValid: true,
 		}
 
-		derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey(priv), priv)
+		cert_raw, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey(priv), priv)
 		if err != nil {
-			return cert, err
+			return conf, err
 		}
 
-		certOut, err := os.Create(c.pem_file)
+		pem_cert := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert_raw})
+		pem_key := pem.EncodeToMemory(pemBlockForKey(priv))
+
+		cert, err := tls.X509KeyPair(pem_cert, pem_key)
 		if err != nil {
-			return cert, err
+			return conf, err
 		}
-		defer certOut.Close()
 
-		pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+		return tls.Config{
+			Certificates:       []tls.Certificate{cert},
+			InsecureSkipVerify: true,
+		}, nil
+	} else {
+		fmt.Fprintf(os.Stderr, "Loading X509 key pair from %s (%s).\n\n", c.pem_file, c.key_file)
 
-		keyOut, err := os.OpenFile(c.key_file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+		cert, err := tls.LoadX509KeyPair(c.pem_file, c.key_file)
 		if err != nil {
-			return cert, err
+			return conf, err
 		}
-		defer keyOut.Close()
 
-		pem.Encode(keyOut, pemBlockForKey(priv))
+		return tls.Config{
+			Certificates:       []tls.Certificate{cert},
+			InsecureSkipVerify: true,
+		}, nil
 	}
-
-	fmt.Fprintf(os.Stderr, "@ Loading TLS certificate from %s (%s).\n\n", c.pem_file, c.key_file)
-	return tls.LoadX509KeyPair(c.pem_file, c.key_file)
 }
 
 func (c *TLSChannel) Setup(direction Direction, args string) (err error) {
-	cert, err := c.getCertificate()
+	c.config, err = c.getCertificateConfig()
 	if err != nil {
 		return err
-	}
-
-	c.config = tls.Config{
-		Certificates:       []tls.Certificate{cert},
-		InsecureSkipVerify: true,
 	}
 
 	if direction == INPUT_CHANNEL {
