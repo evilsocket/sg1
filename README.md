@@ -53,7 +53,6 @@ If you want to build for a different OS and / or architecture, you can instead d
     cd $GOPATH/src/github.com/evilsocket/sg1/
     GOOS=windows GOARCH=386 make && mv ./sg1 ./sg1.exe
 
-
 ## Contribute
 
 You can contribute by:
