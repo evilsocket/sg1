@@ -28,6 +28,7 @@ package channels
 
 import (
 	"encoding/hex"
+	"flag"
 	"fmt"
 	"github.com/miekg/dns"
 	"net"
@@ -58,6 +59,7 @@ type DNSServer struct {
 
 type DNSChannel struct {
 	is_client bool
+	verbose   bool
 	domain    string
 	address   string
 	port      int
@@ -69,6 +71,7 @@ type DNSChannel struct {
 func NewDNSChannel() *DNSChannel {
 	s := &DNSChannel{
 		is_client: true,
+		verbose:   false,
 		domain:    "sg1.com",
 		address:   "",
 		port:      53,
@@ -100,6 +103,7 @@ func (c *DNSChannel) Description() string {
 }
 
 func (c *DNSChannel) Register() error {
+	flag.BoolVar(&c.verbose, "dns-verbose", false, "If set to true, DNS operations will be verbose.")
 	return nil
 }
 
@@ -255,7 +259,9 @@ func (c *DNSChannel) Read(b []byte) (n int, err error) {
 }
 
 func (c *DNSChannel) Lookup(fqdn string) error {
-	fmt.Fprintf(os.Stderr, "Resolving %s (seqn=0x%x) ...\n", fqdn, c.client.seqn)
+	if c.verbose {
+		fmt.Fprintf(os.Stderr, "Resolving %s (seqn=0x%x) ...\n", fqdn, c.client.seqn)
+	}
 
 	if c.client.client == nil {
 		if _, err := net.LookupHost(fqdn); err != nil {
