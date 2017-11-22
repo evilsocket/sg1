@@ -187,6 +187,7 @@ func (c *Pastebin) Start() error {
 						packet.DataSize = uint32(len(packet.Data))
 
 						// fmt.Fprintf(os.Stderr, "  packet.DataSize = %d\n", packet.DataSize)
+						// fmt.Fprintf(os.Stderr, "  packet.Data is %s\n", hex.EncodeToString(packet.Data))
 						// fmt.Fprintf(os.Stderr, "  packet.Data is %d bytes\n", len(packet.Data))
 
 						c.stats.TotalRead += int(packet.DataSize)
@@ -314,8 +315,9 @@ func (c *Pastebin) Read(b []byte) (n int, err error) {
 	for i, c := range data {
 		b[i] = c
 	}
-
-	return len(data), nil
+	size := len(data)
+	c.stats.TotalRead += size
+	return size, nil
 }
 
 func (c *Pastebin) sendPaste(paste Paste) (resp string, err error) {
@@ -362,7 +364,7 @@ func (c *Pastebin) Write(b []byte) (n int, err error) {
 	} else if strings.Contains(resp, "://") {
 		fmt.Fprintf(os.Stderr, "\n%s\n", resp)
 		c.seqn++
-		c.stats.TotalWrote += n
+		c.stats.TotalWrote += len(b)
 		return n, nil
 	} else {
 		return 0, fmt.Errorf("Could not send paste: %s", resp)
