@@ -62,7 +62,7 @@ func (m *Base64) Register() error {
 
 func (m *Base64) Run(input, output channels.Channel, delay int) error {
 	var err error
-	var block = make([]byte, 1024)
+	var block = make([]byte, 1024*1024)
 	var n int
 
 	for {
