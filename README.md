@@ -57,6 +57,7 @@ If you want to build for a different OS and / or architecture, you can instead d
 
 You can contribute by:
 
+0) Read the code, love the code, fix the code.
 1) Grep for `TODO` and see how you can help.
 2) Implement a new module ( see `modules/raw.go` for very basic example or `modules/aes.go` for complete one ).
 3) Implement a new channel ( see `channels/*.go` ).
