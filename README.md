@@ -34,7 +34,7 @@
                                                    REASONS      
 ```
 
-SG1 is a wanna be swiss army knife for data encryption, exfiltration and covert communication. In its core SG1 aims to be as simple to use as netcat while maintaining high modularity.
+SG1 is a wanna be swiss army knife for data encryption, exfiltration and covert communication. In its core `sg1` aims to be as simple to use as `nc` while maintaining high modularity internally, being a framework for bizarre exfiltration, data manipulation and transfer methods.
 
 **WORK IN PROGRESS, DON'T JUDGE**
 
