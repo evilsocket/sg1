@@ -78,6 +78,9 @@ Encrypting data in AES and exfiltrate it via DNS requests:
 Executing commands encoded and sent via DNS requests:
 ![exec](https://pbs.twimg.com/media/DPKgERnX0AEKuJn.jpg:large)
 
+Use several machines to create exfiltration tunnels ( tls -> dns -> command execution -> tcp ):
+![tunnel](https://pbs.twimg.com/media/DPPhxAnX4AI7UUV.jpg:large)
+
 Test with different operating systems ( tnx to [decoded](https://twitter.com/d3d0c3d) ):
 ![freebsd](https://pbs.twimg.com/media/DPH0612UQAA3gzg.jpg:large)
 
