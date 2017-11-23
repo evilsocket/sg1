@@ -1,5 +1,6 @@
 TARGET=sg1
 BUILD_DATE=`date +%Y-%m-%d\ %H:%M`
+BUILD_FOLDER=build
 BUILD_FILE=build.go
 
 all: build
@@ -8,7 +9,8 @@ all: build
 
 build: build_file
 	@echo "@ Building ..."
-	@go build $(FLAGS) -o $(TARGET) cmd/$(TARGET)/*.go
+	@mkdir -p $(BUILD_FOLDER)
+	@go build $(FLAGS) -o $(BUILD_FOLDER)/$(TARGET) cmd/$(TARGET)/*.go
 
 build_file: 
 	@rm -f $(BUILD_FILE)
@@ -18,4 +20,4 @@ build_file:
 	@echo ")" >> $(BUILD_FILE)
 
 clean:
-	@rm -rf $(TARGET) $(BUILD_FILE)
+	@rm -rf $(TARGET) $(BUILD_FILE) $(BUILD_FOLDER)
