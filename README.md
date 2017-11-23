@@ -42,6 +42,8 @@ SG1 is a wanna be swiss army knife for data encryption, exfiltration and covert 
 
 ## Installation
 
+Make sure you have at least **go 1.8** in order to build `sg1`, then:
+
     go get github.com/miekg/dns
     go get github.com/evilsocket/sg1
 
