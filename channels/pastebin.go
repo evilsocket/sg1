@@ -70,6 +70,7 @@ type Paste struct {
 
 type Pastebin struct {
 	is_client bool
+	preserve  bool
 	api_key   string
 	user_key  string
 	seqn      uint32
@@ -80,6 +81,7 @@ type Pastebin struct {
 func NewPastebinChannel() *Pastebin {
 	return &Pastebin{
 		is_client: true,
+		preserve:  false,
 		chunks:    make(chan []byte),
 	}
 }
@@ -91,6 +93,7 @@ func (c *Pastebin) Name() string {
 func (c *Pastebin) Register() error {
 	flag.StringVar(&c.api_key, "pastebin-api-key", "", "API developer key for the pastebin channel.")
 	flag.StringVar(&c.user_key, "pastebin-user-key", "", "API user key for the pastebin channel ( https://pastebin.com/api#8 ).")
+	flag.BoolVar(&c.preserve, "pastebin-preserve", c.preserve, "Do not delete pastes after reading them.")
 	return nil
 }
 
@@ -165,8 +168,10 @@ func (c *Pastebin) Start() error {
 						sg1.Log("Error while decoding body: %s\n", err)
 					}
 
-					// sg1.Log("Deleting paste %s.\n", oldest.key)
-					_, err = c.deletePaste(oldest)
+					if c.preserve == false {
+						// sg1.Log("Deleting paste %s.\n", oldest.key)
+						_, err = c.deletePaste(oldest)
+					}
 				}
 
 				time.Sleep(time.Duration(1) * time.Second)
