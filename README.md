@@ -58,8 +58,6 @@ After compilation, you will find the `sg1` binary inside the `build` folder, you
 
 ## Contribute
 
-You can contribute by:
-
 0) Read the code, love the code, fix the code.
 1) Grep for `TODO` and see how you can help.
 2) Implement a new module ( see `modules/raw.go` for very basic example or `modules/aes.go` for complete one ).
