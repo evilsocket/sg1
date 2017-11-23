@@ -84,7 +84,7 @@ func onError(err error) {
 }
 
 func main() {
-	sg1.Log("%s v%s ( built on %s for %s %s )\n\n", sg1.APP_NAME, sg1.APP_VERSION, sg1.APP_BUILD_DATE, runtime.GOOS, runtime.GOARCH)
+	sg1.Log("%s v%s ( built from %s on %s for %s %s )\n\n", sg1.APP_NAME, sg1.APP_VERSION, sg1.APP_BUILD_BRANCH, sg1.APP_BUILD_DATE, runtime.GOOS, runtime.GOARCH)
 
 	flag.Parse()
 
