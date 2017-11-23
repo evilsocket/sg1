@@ -52,7 +52,9 @@ If you want to build for a different OS and / or architecture, you can instead d
 
     GOOS=windows GOARCH=386 make
 
-After compilation, you will find the `sg1` binary inside the `build` folder.
+After compilation, you will find the `sg1` binary inside the `build` folder, you can start with taking a look at the help menu:
+
+    ./build/sg1 -h
 
 ## Contribute
 
