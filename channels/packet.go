@@ -28,6 +28,7 @@ package channels
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 )
 
@@ -76,7 +77,7 @@ func (p *Packet) HeaderSize() int {
 	return 4 + 4
 }
 
-func (p *Packet) Encode() []byte {
+func (p *Packet) Raw() []byte {
 	seqn_buf := make([]byte, 4)
 	size_buf := make([]byte, 4)
 
@@ -87,6 +88,10 @@ func (p *Packet) Encode() []byte {
 	buffer = append(size_buf, buffer...)
 
 	return buffer
+}
+
+func (p *Packet) Hex() string {
+	return hex.EncodeToString(p.Raw())
 }
 
 func PadBuffer(buf []byte, size int, pad byte) []byte {

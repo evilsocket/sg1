@@ -199,7 +199,7 @@ func (c *Pastebin) Write(b []byte) (n int, err error) {
 	packet := NewPacket(c.seqn, uint32(len(b)), b)
 
 	paste := Paste{
-		Text:       hex.EncodeToString(packet.Encode()),
+		Text:       packet.Hex(),
 		Name:       fmt.Sprintf("SG1 0x%x", time.Now().UnixNano()/int64(time.Millisecond)),
 		Privacy:    Private,
 		ExpireDate: Hour,

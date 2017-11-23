@@ -265,7 +265,7 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 		size := len(chunk)
 		packet := NewPacket(c.client.seqn, uint32(size), chunk)
 
-		fqdn := fmt.Sprintf("%s.%s", hex.EncodeToString(packet.Encode()), c.domain)
+		fqdn := fmt.Sprintf("%s.%s", packet.Hex(), c.domain)
 
 		if err := c.Lookup(fqdn); err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
