@@ -47,11 +47,12 @@ SG1 is a wanna be swiss army knife for data encryption, exfiltration and covert 
 
     cd $GOPATH/src/github.com/evilsocket/sg1/
     make
-    ./build/sg1 -h
 
 If you want to build for a different OS and / or architecture, you can instead do:
 
     GOOS=windows GOARCH=386 make
+
+After compilation, you will find the `sg1` binary inside the `build` folder.
 
 ## Contribute
 
