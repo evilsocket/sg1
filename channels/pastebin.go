@@ -115,29 +115,6 @@ func (c *Pastebin) Setup(direction Direction, args string) error {
 	return nil
 }
 
-func (c *Pastebin) getPaste(key string) (body string, err error) {
-	values := url.Values{}
-	values.Set("api_dev_key", c.api_key)
-	values.Set("api_user_key", c.user_key)
-	values.Set("api_paste_key", key)
-	values.Set("api_option", "show_paste")
-	response, err := http.PostForm("https://pastebin.com/api/api_raw.php", values)
-	defer response.Body.Close()
-	if err != nil {
-		return "", err
-	}
-	if response.StatusCode != 200 {
-		return "", fmt.Errorf("Got response code %d.", response.StatusCode)
-	}
-	buf := bytes.Buffer{}
-	_, err = buf.ReadFrom(response.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
-}
-
 func (c *Pastebin) Start() error {
 	if c.is_client == true {
 		fmt.Fprintf(os.Stderr, "Sending data to pastebin ...\n")
@@ -208,74 +185,6 @@ func (c *Pastebin) HasWriter() bool {
 	return true
 }
 
-func (c *Pastebin) getPastes() (pastes []XmlPaste, err error) {
-	values := url.Values{}
-	values.Set("api_dev_key", c.api_key)
-	values.Set("api_user_key", c.user_key)
-	values.Set("api_option", "list")
-	values.Set("api_results_limit", "1000")
-	response, err := http.PostForm("https://pastebin.com/api/api_post.php", values)
-	defer response.Body.Close()
-	if err != nil {
-		return nil, err
-	}
-	if response.StatusCode != 200 {
-		return nil, fmt.Errorf("Got response code %d.", response.StatusCode)
-	}
-	buf := bytes.Buffer{}
-	_, err = buf.ReadFrom(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	pastes = make([]XmlPaste, 0)
-	lines := strings.Split(buf.String(), "\n")
-
-	keyParser := regexp.MustCompile("^<paste_key>(.+)</paste_key>$")
-	titleParser := regexp.MustCompile("^<paste_title>SG1 (.+)</paste_title>$")
-
-	var paste XmlPaste
-	for _, line := range lines {
-		line = strings.Trim(line, " \n\r\t")
-		// skip empty lines
-		if line == "" {
-			continue
-		} else if line == "<paste>" {
-			paste = XmlPaste{}
-		} else if line == "</paste>" {
-			pastes = append(pastes, paste)
-		} else if m := keyParser.FindStringSubmatch(line); len(m) == 2 {
-			paste.key = m[1]
-		} else if m := titleParser.FindStringSubmatch(line); len(m) == 2 {
-			paste.title = m[1]
-		}
-	}
-
-	return pastes, nil
-}
-
-func (c *Pastebin) deletePaste(paste XmlPaste) (resp string, err error) {
-	values := url.Values{}
-	values.Set("api_dev_key", c.api_key)
-	values.Set("api_user_key", c.user_key)
-	values.Set("api_paste_key", paste.key)
-	values.Set("api_option", "delete")
-	response, err := http.PostForm("https://pastebin.com/api/api_post.php", values)
-	defer response.Body.Close()
-	if err != nil {
-		return "", err
-	}
-	if response.StatusCode != 200 {
-		return "", fmt.Errorf("Got response code %d.", response.StatusCode)
-	}
-	buf := bytes.Buffer{}
-	_, err = buf.ReadFrom(response.Body)
-	if err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
 func (c *Pastebin) Read(b []byte) (n int, err error) {
 	data := <-c.chunks
 	for i, c := range data {
@@ -284,31 +193,6 @@ func (c *Pastebin) Read(b []byte) (n int, err error) {
 	size := len(data)
 	c.stats.TotalRead += size
 	return size, nil
-}
-
-func (c *Pastebin) sendPaste(paste Paste) (resp string, err error) {
-	values := url.Values{}
-	values.Set("api_dev_key", c.api_key)
-	values.Set("api_user_key", c.user_key)
-	values.Set("api_option", "paste")
-	values.Set("api_paste_code", paste.Text)
-	values.Set("api_paste_name", paste.Name)
-	values.Set("api_paste_private", paste.Privacy)
-	values.Set("api_paste_expire_date", paste.ExpireDate)
-	response, err := http.PostForm("https://pastebin.com/api/api_post.php", values)
-	defer response.Body.Close()
-	if err != nil {
-		return "", err
-	}
-	if response.StatusCode != 200 {
-		return "", fmt.Errorf("Got response code %d.", response.StatusCode)
-	}
-	buf := bytes.Buffer{}
-	_, err = buf.ReadFrom(response.Body)
-	if err != nil {
-		return "", err
-	}
-	return buf.String(), nil
 }
 
 func (c *Pastebin) Write(b []byte) (n int, err error) {
@@ -339,4 +223,99 @@ func (c *Pastebin) Write(b []byte) (n int, err error) {
 
 func (c *Pastebin) Stats() Stats {
 	return c.stats
+}
+
+func (c *Pastebin) apiRequest(page string, values url.Values) (body string, err error) {
+	response, err := http.PostForm("https://pastebin.com/api/"+page, values)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode != 200 {
+		return "", fmt.Errorf("Got response code %d.", response.StatusCode)
+	}
+
+	buf := bytes.Buffer{}
+	_, err = buf.ReadFrom(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+func (c *Pastebin) getPaste(key string) (body string, err error) {
+	values := url.Values{}
+	values.Set("api_dev_key", c.api_key)
+	values.Set("api_user_key", c.user_key)
+	values.Set("api_paste_key", key)
+	values.Set("api_option", "show_paste")
+
+	return c.apiRequest("api_raw.php", values)
+}
+
+func (c *Pastebin) parseXmlPastes(body string) []XmlPaste {
+	keyParser := regexp.MustCompile("^<paste_key>(.+)</paste_key>$")
+	titleParser := regexp.MustCompile("^<paste_title>SG1 (.+)</paste_title>$")
+	pastes := make([]XmlPaste, 0)
+	lines := strings.Split(body, "\n")
+	paste := XmlPaste{}
+
+	for _, line := range lines {
+		line = strings.Trim(line, " \n\r\t")
+		// skip empty lines
+		if line == "" {
+			continue
+		} else if line == "<paste>" {
+			paste = XmlPaste{}
+		} else if line == "</paste>" {
+			pastes = append(pastes, paste)
+		} else if m := keyParser.FindStringSubmatch(line); len(m) == 2 {
+			paste.key = m[1]
+		} else if m := titleParser.FindStringSubmatch(line); len(m) == 2 {
+			paste.title = m[1]
+		}
+	}
+
+	return pastes
+}
+
+func (c *Pastebin) getPastes() (pastes []XmlPaste, err error) {
+	values := url.Values{}
+	values.Set("api_dev_key", c.api_key)
+	values.Set("api_user_key", c.user_key)
+	values.Set("api_option", "list")
+	values.Set("api_results_limit", "1000")
+
+	body, err := c.apiRequest("api_post.php", values)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.parseXmlPastes(body), nil
+}
+
+func (c *Pastebin) deletePaste(paste XmlPaste) (resp string, err error) {
+	values := url.Values{}
+	values.Set("api_dev_key", c.api_key)
+	values.Set("api_user_key", c.user_key)
+	values.Set("api_paste_key", paste.key)
+	values.Set("api_option", "delete")
+
+	return c.apiRequest("api_post.php", values)
+}
+
+func (c *Pastebin) sendPaste(paste Paste) (resp string, err error) {
+	values := url.Values{}
+	values.Set("api_dev_key", c.api_key)
+	values.Set("api_user_key", c.user_key)
+	values.Set("api_option", "paste")
+	values.Set("api_paste_code", paste.Text)
+	values.Set("api_paste_name", paste.Name)
+	values.Set("api_paste_private", paste.Privacy)
+	values.Set("api_paste_expire_date", paste.ExpireDate)
+
+	return c.apiRequest("api_post.php", values)
 }
