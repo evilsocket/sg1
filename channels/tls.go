@@ -213,10 +213,7 @@ func (c *TLSChannel) Start() (err error) {
 		go func() {
 			for {
 				if conn, err := c.listener.Accept(); err == nil {
-					c.client = conn
-					c.mutex.Lock()
-					c.cond.Signal()
-					c.mutex.Unlock()
+					c.SetClient(conn)
 				} else {
 					break
 				}
@@ -235,18 +232,35 @@ func (c *TLSChannel) HasWriter() bool {
 	return true
 }
 
+func (c *TLSChannel) SetClient(con net.Conn) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if c.client != nil {
+		c.client.Close()
+		c.client = nil
+	}
+
+	c.client = con
+	c.cond.Signal()
+}
+
 func (c *TLSChannel) WaitForClient() {
 	if c.is_client == false && c.client == nil {
 		c.mutex.Lock()
+		defer c.mutex.Unlock()
 		c.cond.Wait()
-		c.mutex.Unlock()
 	}
+}
+
+func (c *TLSChannel) GetClient() net.Conn {
+	c.WaitForClient()
+	return c.client
 }
 
 func (c *TLSChannel) Read(b []byte) (n int, err error) {
 	if c.is_client == false {
-		c.WaitForClient()
-		n, err = c.client.Read(b)
+		n, err = c.GetClient().Read(b)
 	} else {
 		n, err = c.connection.Read(b)
 	}
@@ -259,8 +273,7 @@ func (c *TLSChannel) Read(b []byte) (n int, err error) {
 
 func (c *TLSChannel) Write(b []byte) (n int, err error) {
 	if c.is_client == false {
-		c.WaitForClient()
-		n, err = c.client.Write(b)
+		n, err = c.GetClient().Write(b)
 	} else {
 		n, err = c.connection.Write(b)
 	}
