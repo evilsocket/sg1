@@ -105,7 +105,11 @@ func main() {
 		onError(err)
 	}
 
-	sg1.Log("  %s --> [%s] --> %s\n\n", input.Name(), module.Name(), output.Name())
+	if module.Name() == "raw" {
+		sg1.Log("  %s --> %s\n\n", input.Name(), output.Name())
+	} else {
+		sg1.Log("  %s --> [%s] --> %s\n\n", input.Name(), module.Name(), output.Name())
+	}
 
 	if err = input.Start(); err != nil {
 		onError(err)
