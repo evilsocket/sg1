@@ -48,6 +48,7 @@ func ReadLoop(input, output channels.Channel, buffer_size, delay int, dataHandle
 	var buff = make([]byte, buffer_size)
 
 	for {
+		// read buffer_size bytes from the input channel
 		if n, err = input.Read(buff); err != nil {
 			if err.Error() == "EOF" {
 				break
@@ -56,6 +57,7 @@ func ReadLoop(input, output channels.Channel, buffer_size, delay int, dataHandle
 			}
 		}
 
+		// if a handler was given, process those bytes with it
 		if dataHandler != nil {
 			n, buff, err = dataHandler(buff[:n])
 			if err != nil {
@@ -63,10 +65,12 @@ func ReadLoop(input, output channels.Channel, buffer_size, delay int, dataHandle
 			}
 		}
 
+		// write bytes to the output channel
 		if _, err = output.Write(buff[:n]); err != nil {
 			return err
 		}
 
+		// throttle if delay was specified
 		if delay > 0 {
 			time.Sleep(time.Duration(delay) * time.Millisecond)
 		}
