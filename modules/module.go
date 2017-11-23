@@ -28,6 +28,7 @@ package modules
 
 import (
 	"github.com/evilsocket/sg1/channels"
+	"time"
 )
 
 type Module interface {
@@ -37,4 +38,39 @@ type Module interface {
 	Register() error
 
 	Run(in, out channels.Channel, buffer_size, delay int) error
+}
+
+type DataHandler func(buff []byte) (int, []byte, error)
+
+func ReadLoop(input, output channels.Channel, buffer_size, delay int, dataHandler DataHandler) error {
+	var n int
+	var err error
+	var buff = make([]byte, buffer_size)
+
+	for {
+		if n, err = input.Read(buff); err != nil {
+			if err.Error() == "EOF" {
+				break
+			} else {
+				return err
+			}
+		}
+
+		if dataHandler != nil {
+			n, buff, err = dataHandler(buff[:n])
+			if err != nil {
+				return err
+			}
+		}
+
+		if _, err = output.Write(buff[:n]); err != nil {
+			return err
+		}
+
+		if delay > 0 {
+			time.Sleep(time.Duration(delay) * time.Millisecond)
+		}
+	}
+
+	return nil
 }

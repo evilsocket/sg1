@@ -29,8 +29,8 @@ package modules
 import (
 	b64 "encoding/base64"
 	"flag"
+	"github.com/evilsocket/sg1"
 	"github.com/evilsocket/sg1/channels"
-	"time"
 )
 
 type Base64 struct {
@@ -61,40 +61,21 @@ func (m *Base64) Register() error {
 }
 
 func (m *Base64) Run(input, output channels.Channel, buffer_size, delay int) error {
-	var err error
-	var block = make([]byte, buffer_size)
-	var n int
-
-	for {
-		if n, err = input.Read(block); err != nil {
-			if err.Error() == "EOF" {
-				break
-			} else {
-				return err
-			}
-		}
-
-		var buff []byte
+	return ReadLoop(input, output, buffer_size, delay, func(buff []byte) (int, []byte, error) {
+		var output []byte
 
 		if m.mode == "encode" {
-			encoded := b64.StdEncoding.EncodeToString(block[:n])
-			buff = []byte(encoded)
+			encoded := b64.StdEncoding.EncodeToString(buff)
+			output = []byte(encoded)
 		} else {
-			decoded, err := b64.StdEncoding.DecodeString(string(block[:n]))
+			decoded, err := b64.StdEncoding.DecodeString(string(buff))
 			if err != nil {
-				return err
+				sg1.Log("%s\n", err)
+				return 0, nil, err
 			}
-			buff = decoded
+			output = decoded
 		}
 
-		if _, err = output.Write(buff); err != nil {
-			return err
-		}
-
-		if delay > 0 {
-			time.Sleep(time.Duration(delay) * time.Millisecond)
-		}
-	}
-
-	return nil
+		return len(output), output, nil
+	})
 }

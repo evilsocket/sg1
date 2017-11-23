@@ -31,7 +31,6 @@ import (
 	"github.com/evilsocket/sg1/channels"
 	"os/exec"
 	"strings"
-	"time"
 )
 
 type Exec struct {
@@ -54,22 +53,9 @@ func (m *Exec) Register() error {
 }
 
 func (m *Exec) Run(input, output channels.Channel, buffer_size, delay int) error {
-	var n int
-	var err error
-	var buff = make([]byte, buffer_size)
-
-	for {
-		if n, err = input.Read(buff); err != nil {
-			if err.Error() == "EOF" {
-				break
-			} else {
-				return err
-			}
-		}
-
+	return ReadLoop(input, output, buffer_size, delay, func(buff []byte) (int, []byte, error) {
 		var cmdout []byte
-
-		cmdline := string(buff[:n])
+		cmdline := string(buff)
 		cmdline = strings.Trim(cmdline, " \t\r\n")
 
 		// sg1.Log("Parsing and executing command line (%d bytes) '%s'.\n", n, cmdline)
@@ -95,16 +81,8 @@ func (m *Exec) Run(input, output channels.Channel, buffer_size, delay int) error
 			} else {
 				cmdout = []byte(raw)
 			}
-
-			if _, err = output.Write(cmdout); err != nil {
-				return err
-			}
 		}
 
-		if delay > 0 {
-			time.Sleep(time.Duration(delay) * time.Millisecond)
-		}
-	}
-
-	return nil
+		return len(cmdout), cmdout, err
+	})
 }

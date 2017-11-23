@@ -34,7 +34,6 @@ import (
 	"fmt"
 	"github.com/evilsocket/sg1/channels"
 	"io"
-	"time"
 )
 
 type AES struct {
@@ -122,40 +121,20 @@ func (m *AES) Run(input, output channels.Channel, buffer_size, delay int) error 
 		return fmt.Errorf("No AES key specified.")
 	}
 
-	var n int
-	var err error
-	var buff = make([]byte, buffer_size)
-
-	for {
-		if n, err = input.Read(buff); err != nil {
-			if err.Error() == "EOF" {
-				break
-			} else {
-				return err
-			}
-		}
-
+	return ReadLoop(input, output, buffer_size, delay, func(buff []byte) (int, []byte, error) {
 		var err error
 		var data []byte
 
 		if m.mode == "encrypt" {
-			err, data = m.encrypt(buff[:n], m.key)
+			err, data = m.encrypt(buff, m.key)
 		} else if m.mode == "decrypt" {
-			err, data = m.decrypt(buff[:n], m.key)
+			err, data = m.decrypt(buff, m.key)
 		}
 
 		if err != nil {
-			return err
+			return 0, nil, err
 		}
 
-		if _, err = output.Write(data); err != nil {
-			return err
-		}
-
-		if delay > 0 {
-			time.Sleep(time.Duration(delay) * time.Millisecond)
-		}
-	}
-
-	return nil
+		return len(data), data, nil
+	})
 }
