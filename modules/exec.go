@@ -54,32 +54,37 @@ func (m *Exec) Register() error {
 
 func (m *Exec) Run(input, output channels.Channel, buffer_size, delay int) error {
 	return ReadLoop(input, output, buffer_size, delay, func(buff []byte) (int, []byte, error) {
+		var err error
 		var cmdout []byte
+
 		cmdline := string(buff)
-		cmdline = strings.Trim(cmdline, " \t\r\n")
-
-		// sg1.Log("Parsing and executing command line (%d bytes) '%s'.\n", n, cmdline)
-
-		cmd := ""
-		args := []string{}
+		cmdline = strings.Trim(cmdline, " \x00\t\r\n")
 
 		if cmdline != "" {
-			parts := strings.Fields(cmdline)
-			cmd = parts[0]
-			args = parts[1:len(parts)]
-		}
+			// sg1.Log("Parsing and executing command line (%d bytes) '%s'.\n", len(buff), cmdline)
 
-		path, err := exec.LookPath(cmd)
-		if err != nil {
-			sg1.Log("Error while looking path of '%s': %s.\n", cmd, err)
-			cmdout = []byte(err.Error())
-		} else {
-			raw, err := exec.Command(path, args...).CombinedOutput()
+			cmd := ""
+			args := []string{}
+
+			if cmdline != "" {
+				parts := strings.Fields(cmdline)
+				cmd = parts[0]
+				args = parts[1:len(parts)]
+			}
+
+			path, err := exec.LookPath(cmd)
 			if err != nil {
-				sg1.Log("Error while executing '%s %s': %s.\n", path, args, err)
+				sg1.Log("Error while looking path of '%s': %s.\n", cmd, err)
 				cmdout = []byte(err.Error())
 			} else {
-				cmdout = []byte(raw)
+				// sg1.Log("  path='%s' %d args='%s'\n", path, len(args), args)
+				raw, err := exec.Command(path, args...).CombinedOutput()
+				if err != nil {
+					sg1.Log("Error while executing '%s %s': %s.\n", path, args, err)
+					cmdout = []byte(err.Error())
+				} else {
+					cmdout = []byte(raw)
+				}
 			}
 		}
 
