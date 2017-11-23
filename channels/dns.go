@@ -259,28 +259,9 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 		fmt.Fprintf(os.Stderr, "Writing %d bytes: '%s' -> %s...\n", len(b), string(b), hex.EncodeToString(b))
 	}
 
-	total_size := len(b)
-	left := total_size
-	done := 0
-
-	for left > 0 {
-		size := DNSChunkSize
-		if left < size {
-			size = left
-		}
-
-		// fmt.Printf("  chunk := b[%d:%d]\n", done, size)
-		chunk := b[done : done+size]
-		// add padding
-		if size < DNSChunkSize {
-			// fmt.Printf("    padding\n")
-			pad := size
-			for pad < DNSChunkSize {
-				chunk = append(chunk, 0x00)
-				pad++
-			}
-		}
-
+	wrote := 0
+	for _, chunk := range BufferToChunks(b, DNSChunkSize) {
+		size := len(chunk)
 		packet := NewPacket(c.client.seqn, uint32(size), chunk)
 
 		fqdn := fmt.Sprintf("%s.%s", hex.EncodeToString(packet.Encode()), c.domain)
@@ -288,15 +269,14 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 		if err := c.Lookup(fqdn); err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 		} else {
+			wrote += size
 			c.stats.TotalWrote += size
 		}
 
-		done += size
-		left -= size
 		c.client.seqn++
 	}
 
-	return done, nil
+	return wrote, nil
 }
 
 func (c *DNSChannel) Stats() Stats {

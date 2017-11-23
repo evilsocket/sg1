@@ -90,3 +90,39 @@ func (p *Packet) Encode() []byte {
 
 	return buffer
 }
+
+func PadBuffer(buf []byte, size int, pad byte) []byte {
+	buf_sz := len(buf)
+	if buf_sz < size {
+		to_pad := size - buf_sz
+		for i := 0; i < to_pad; i++ {
+			buf = append(buf, pad)
+		}
+	}
+
+	return buf
+}
+
+func BufferToChunks(buffer []byte, chunk_size int) [][]byte {
+	total_sz := len(buffer)
+	left := total_sz
+	done := 0
+	chunks := make([][]byte, 0)
+
+	for left > 0 {
+		size := chunk_size
+		if left < size {
+			size = left
+		}
+
+		chunk := buffer[done : done+size]
+		chunk = PadBuffer(chunk, chunk_size, 0x00)
+
+		chunks = append(chunks, chunk)
+
+		done += size
+		left -= size
+	}
+
+	return chunks
+}
