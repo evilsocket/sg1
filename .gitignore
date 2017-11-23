@@ -1,5 +1,5 @@
 *.sw*
 build.go
+./sg1
 certs
-sg1
 get_pastebin_user_key.*

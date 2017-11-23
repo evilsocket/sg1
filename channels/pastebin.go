@@ -31,9 +31,9 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"github.com/evilsocket/sg1"
 	"net/http"
 	"net/url"
-	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -117,15 +117,15 @@ func (c *Pastebin) Setup(direction Direction, args string) error {
 
 func (c *Pastebin) Start() error {
 	if c.is_client == true {
-		fmt.Fprintf(os.Stderr, "Sending data to pastebin ...\n")
+		sg1.Log("Sending data to pastebin ...\n")
 	} else {
-		fmt.Fprintf(os.Stderr, "Running pastebin listener ...\n\n")
+		sg1.Log("Running pastebin listener ...\n\n")
 
 		go func() {
 			for {
 				pastes, err := c.getPastes()
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "Error while requesting pastes: %s.\n", err)
+					sg1.Log("Error while requesting pastes: %s.\n", err)
 					continue
 				}
 
@@ -137,35 +137,35 @@ func (c *Pastebin) Start() error {
 
 					oldest := pastes[0]
 
-					// fmt.Fprintf(os.Stderr, "Requesting paste %v\n", oldest)
+					// sg1.Log("Requesting paste %v\n", oldest)
 
 					paste, err := c.getPaste(oldest.key)
 					if err != nil {
-						fmt.Fprintf(os.Stderr, "Error while requesting paste %s: %s\n", oldest.key, err)
+						sg1.Log("Error while requesting paste %s: %s\n", oldest.key, err)
 					}
 
-					// fmt.Fprintf(os.Stderr, "Decoding paste body:\n%s\n", paste)
+					// sg1.Log("Decoding paste body:\n%s\n", paste)
 					chunk, err := hex.DecodeString(paste)
 					if err != nil {
-						fmt.Fprintf(os.Stderr, "Error while decoding body from hex: %s\n", err)
+						sg1.Log("Error while decoding body from hex: %s\n", err)
 					}
 
-					// fmt.Fprintf(os.Stderr, "Decoding packet from %d bytes.\n", len(chunk))
+					// sg1.Log("Decoding packet from %d bytes.\n", len(chunk))
 					if packet, err := DecodePacket(chunk); err == nil {
 						// fix data size
 						packet.DataSize = uint32(len(packet.Data))
 
-						// fmt.Fprintf(os.Stderr, "  packet.DataSize = %d\n", packet.DataSize)
-						// fmt.Fprintf(os.Stderr, "  packet.Data is %s\n", hex.EncodeToString(packet.Data))
-						// fmt.Fprintf(os.Stderr, "  packet.Data is %d bytes\n", len(packet.Data))
+						// sg1.Log("  packet.DataSize = %d\n", packet.DataSize)
+						// sg1.Log("  packet.Data is %s\n", hex.EncodeToString(packet.Data))
+						// sg1.Log("  packet.Data is %d bytes\n", len(packet.Data))
 
 						c.stats.TotalRead += int(packet.DataSize)
 						c.chunks <- packet.Data
 					} else {
-						fmt.Fprintf(os.Stderr, "Error while decoding body: %s\n", err)
+						sg1.Log("Error while decoding body: %s\n", err)
 					}
 
-					// fmt.Fprintf(os.Stderr, "Deleting paste %s.\n", oldest.key)
+					// sg1.Log("Deleting paste %s.\n", oldest.key)
 					_, err = c.deletePaste(oldest)
 				}
 
@@ -205,14 +205,14 @@ func (c *Pastebin) Write(b []byte) (n int, err error) {
 		ExpireDate: Hour,
 	}
 
-	fmt.Fprintf(os.Stderr, "Sending paste for payload of %d bytes, paste text is %d bytes.\n", len(b), len(paste.Text))
+	sg1.Log("Sending paste for payload of %d bytes, paste text is %d bytes.\n", len(b), len(paste.Text))
 
 	resp, err := c.sendPaste(paste)
 
 	if err != nil {
 		return 0, err
 	} else if strings.Contains(resp, "://") {
-		fmt.Fprintf(os.Stderr, "\n%s\n", resp)
+		sg1.Log("\n%s\n", resp)
 		c.seqn++
 		c.stats.TotalWrote += len(b)
 		return n, nil

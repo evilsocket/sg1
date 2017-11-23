@@ -24,87 +24,28 @@
 * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 * POSSIBILITY OF SUCH DAMAGE.
  */
-package modules
+package sg1
 
-import (
-	"github.com/evilsocket/sg1"
-	"github.com/evilsocket/sg1/channels"
-	"os/exec"
-	"strings"
-	"time"
+import "fmt"
+
+const (
+	KB = 1024
+	MB = 1024 * 1024
+	GB = 1024 * 1024 * 1024
 )
 
-type Exec struct {
-}
-
-func NewExec() *Exec {
-	return &Exec{}
-}
-
-func (m *Exec) Name() string {
-	return "exec"
-}
-
-func (m *Exec) Description() string {
-	return "Get command from input channel, execute and write output to output channel."
-}
-
-func (m *Exec) Register() error {
-	return nil
-}
-
-func (m *Exec) Run(input, output channels.Channel, buffer_size, delay int) error {
-	var n int
-	var err error
-	var buff = make([]byte, buffer_size)
-
-	for {
-		if n, err = input.Read(buff); err != nil {
-			if err.Error() == "EOF" {
-				break
-			} else {
-				return err
-			}
-		}
-
-		var cmdout []byte
-
-		cmdline := string(buff[:n])
-		cmdline = strings.Trim(cmdline, " \t\r\n")
-
-		// sg1.Log("Parsing and executing command line (%d bytes) '%s'.\n", n, cmdline)
-
-		cmd := ""
-		args := []string{}
-
-		if cmdline != "" {
-			parts := strings.Fields(cmdline)
-			cmd = parts[0]
-			args = parts[1:len(parts)]
-		}
-
-		path, err := exec.LookPath(cmd)
-		if err != nil {
-			sg1.Log("Error while looking path of '%s': %s.\n", cmd, err)
-			cmdout = []byte(err.Error())
-		} else {
-			raw, err := exec.Command(path, args...).CombinedOutput()
-			if err != nil {
-				sg1.Log("Error while executing '%s %s': %s.\n", path, args, err)
-				cmdout = []byte(err.Error())
-			} else {
-				cmdout = []byte(raw)
-			}
-
-			if _, err = output.Write(cmdout); err != nil {
-				return err
-			}
-		}
-
-		if delay > 0 {
-			time.Sleep(time.Duration(delay) * time.Millisecond)
-		}
+func FormatBytes(bytes int) string {
+	if bytes < KB {
+		return fmt.Sprintf("%d B", bytes)
+	} else if bytes < MB {
+		return fmt.Sprintf("%d KB", bytes/KB)
+	} else if bytes < GB {
+		return fmt.Sprintf("%d MB", bytes/MB)
+	} else {
+		return fmt.Sprintf("%d GB", bytes/GB)
 	}
+}
 
-	return nil
+func FormatSpeed(bps float64) string {
+	return fmt.Sprintf("%s/s", FormatBytes(int(bps)))
 }

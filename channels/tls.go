@@ -36,7 +36,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"flag"
-	"fmt"
+	"github.com/evilsocket/sg1"
 	"math/big"
 	"net"
 	"os"
@@ -112,7 +112,7 @@ func pemBlockForKey(priv interface{}) *pem.Block {
 	case *ecdsa.PrivateKey:
 		b, err := x509.MarshalECPrivateKey(k)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to marshal ECDSA private key: %v", err)
+			sg1.Log("Unable to marshal ECDSA private key: %v", err)
 			os.Exit(2)
 		}
 
@@ -125,7 +125,7 @@ func pemBlockForKey(priv interface{}) *pem.Block {
 
 func (c *TLSChannel) getCertificateConfig() (conf tls.Config, err error) {
 	if c.pem_file == "" || c.key_file == "" {
-		fmt.Fprintf(os.Stderr, "Generating new ECDSA certificate ...\n\n")
+		sg1.Log("Generating new ECDSA certificate ...\n\n")
 
 		priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 		if err != nil {
@@ -168,7 +168,7 @@ func (c *TLSChannel) getCertificateConfig() (conf tls.Config, err error) {
 			InsecureSkipVerify: true,
 		}, nil
 	} else {
-		fmt.Fprintf(os.Stderr, "Loading X509 key pair from %s (%s).\n\n", c.pem_file, c.key_file)
+		sg1.Log("Loading X509 key pair from %s (%s).\n\n", c.pem_file, c.key_file)
 
 		cert, err := tls.LoadX509KeyPair(c.pem_file, c.key_file)
 		if err != nil {

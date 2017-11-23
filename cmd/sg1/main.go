@@ -33,24 +33,17 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/evilsocket/sg1"
 	"github.com/evilsocket/sg1/channels"
 	"github.com/evilsocket/sg1/modules"
 )
 
-var (
-	from        = "console"
-	to          = "console"
-	module_name = "raw"
-	delay       = int(0)
-	buffer_size = 1024 * 1024
-)
-
 func init() {
-	flag.StringVar(&from, "in", from, "Read input data from this channel.")
-	flag.StringVar(&to, "out", to, "Write output data to this channel.")
-	flag.StringVar(&module_name, "module", module_name, "Module name to use.")
-	flag.IntVar(&delay, "delay", delay, "Delay in milliseconds to wait between one I/O loop and another, or 0 for no delay.")
-	flag.IntVar(&buffer_size, "buffer-size", buffer_size, "Buffer size to use while reading data to input and writing to output.")
+	flag.StringVar(&sg1.From, "in", sg1.From, "Read input data from this channel.")
+	flag.StringVar(&sg1.To, "out", sg1.To, "Write output data to this channel.")
+	flag.StringVar(&sg1.ModuleName, "module", sg1.ModuleName, "Module name to use.")
+	flag.IntVar(&sg1.Delay, "delay", sg1.Delay, "Delay in milliseconds to wait between one I/O loop and another, or 0 for no delay.")
+	flag.IntVar(&sg1.BufferSize, "buffer-size", sg1.BufferSize, "Buffer size to use while reading data to input and writing to output.")
 
 	channels.Register(channels.NewConsoleChannel())
 	channels.Register(channels.NewTCPChannel())
@@ -85,36 +78,13 @@ func init() {
 }
 
 func onError(err error) {
-	fmt.Println(err)
-	fmt.Println()
-	// flag.Usage()
+	sg1.Log("%s\n", err)
+	sg1.Log("\n")
 	os.Exit(1)
 }
 
-const (
-	KB = 1024
-	MB = 1024 * 1024
-	GB = 1024 * 1024 * 1024
-)
-
-func formatBytes(bytes int) string {
-	if bytes < KB {
-		return fmt.Sprintf("%d B", bytes)
-	} else if bytes < MB {
-		return fmt.Sprintf("%d KB", bytes/KB)
-	} else if bytes < GB {
-		return fmt.Sprintf("%d MB", bytes/MB)
-	} else {
-		return fmt.Sprintf("%d GB", bytes/GB)
-	}
-}
-
-func formatSpeed(bps float64) string {
-	return fmt.Sprintf("%s/s", formatBytes(int(bps)))
-}
-
 func main() {
-	fmt.Fprintf(os.Stderr, "%s v%s ( built on %s for %s %s )\n\n", APP_NAME, APP_VERSION, APP_BUILD_DATE, runtime.GOOS, runtime.GOARCH)
+	sg1.Log("%s v%s ( built on %s for %s %s )\n\n", sg1.APP_NAME, sg1.APP_VERSION, sg1.APP_BUILD_DATE, runtime.GOOS, runtime.GOARCH)
 
 	flag.Parse()
 
@@ -123,19 +93,19 @@ func main() {
 	var module modules.Module
 	var err error
 
-	if input, err = channels.Factory(from, channels.INPUT_CHANNEL); err != nil {
+	if input, err = channels.Factory(sg1.From, channels.INPUT_CHANNEL); err != nil {
 		onError(err)
 	}
 
-	if output, err = channels.Factory(to, channels.OUTPUT_CHANNEL); err != nil {
+	if output, err = channels.Factory(sg1.To, channels.OUTPUT_CHANNEL); err != nil {
 		onError(err)
 	}
 
-	if module, err = modules.Factory(module_name); err != nil {
+	if module, err = modules.Factory(sg1.ModuleName); err != nil {
 		onError(err)
 	}
 
-	fmt.Fprintf(os.Stderr, "  %s --> [%s] --> %s\n\n", input.Name(), module.Name(), output.Name())
+	sg1.Log("  %s --> [%s] --> %s\n\n", input.Name(), module.Name(), output.Name())
 
 	if err = input.Start(); err != nil {
 		onError(err)
@@ -147,7 +117,7 @@ func main() {
 
 	start := time.Now()
 
-	if err = module.Run(input, output, buffer_size, delay); err != nil {
+	if err = module.Run(input, output, sg1.BufferSize, sg1.Delay); err != nil {
 		fmt.Println(err)
 	} else {
 		elapsed := time.Since(start)
@@ -162,11 +132,11 @@ func main() {
 			bps = float64(wrote) / es
 		}
 
-		fmt.Fprintf(os.Stderr, "\n\n")
-		fmt.Fprintf(os.Stderr, "Total read    : %s\n", formatBytes(read))
-		fmt.Fprintf(os.Stderr, "Total written : %s\n", formatBytes(wrote))
-		fmt.Fprintf(os.Stderr, "Time elapsed  : %s\n", elapsed)
-		fmt.Fprintf(os.Stderr, "Speed         : %s\n", formatSpeed(bps))
-		fmt.Fprintf(os.Stderr, "\n")
+		sg1.Log("\n\n")
+		sg1.Log("Total read    : %s\n", sg1.FormatBytes(read))
+		sg1.Log("Total written : %s\n", sg1.FormatBytes(wrote))
+		sg1.Log("Time elapsed  : %s\n", elapsed)
+		sg1.Log("Speed         : %s\n", sg1.FormatSpeed(bps))
+		sg1.Log("\n")
 	}
 }

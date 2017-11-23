@@ -8,11 +8,11 @@ all: build
 
 build: build_file
 	@echo "@ Building ..."
-	@go build $(FLAGS) -o $(TARGET) .
+	@go build $(FLAGS) -o $(TARGET) cmd/$(TARGET)/*.go
 
 build_file: 
 	@rm -f $(BUILD_FILE)
-	@echo "package main" > $(BUILD_FILE)
+	@echo "package sg1" > $(BUILD_FILE)
 	@echo "const (" >> $(BUILD_FILE)
 	@echo "  APP_BUILD_DATE = \"$(BUILD_DATE)\"" >> $(BUILD_FILE)
 	@echo ")" >> $(BUILD_FILE)

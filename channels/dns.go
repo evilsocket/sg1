@@ -30,6 +30,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"github.com/evilsocket/sg1"
 	"github.com/miekg/dns"
 	"net"
 	"os"
@@ -133,7 +134,7 @@ func (c *DNSChannel) setupServer(args string) error {
 				}
 			}
 		} else {
-			fmt.Fprintf(os.Stderr, "Error: %s.\n", err)
+			sg1.Log("Error: %s\n", err)
 		}
 
 		m := new(dns.Msg)
@@ -182,9 +183,9 @@ func (c *DNSChannel) Setup(direction Direction, args string) (err error) {
 
 func (c *DNSChannel) Start() error {
 	if c.is_client == true {
-		fmt.Fprintf(os.Stderr, "Performing DNS lookups ...\n")
+		sg1.Log("Performing DNS lookups ...\n")
 	} else {
-		fmt.Fprintf(os.Stderr, "Running DNS server on '%s:%d' ...\n", c.address, c.port)
+		sg1.Log("Running DNS server on '%s:%d' ...\n", c.address, c.port)
 
 		go func() {
 			if err := c.server.server.ListenAndServe(); err != nil {
@@ -227,7 +228,7 @@ func (c *DNSChannel) Read(b []byte) (n int, err error) {
 
 func (c *DNSChannel) Lookup(fqdn string) error {
 	if c.verbose {
-		fmt.Fprintf(os.Stderr, "Resolving %s (seqn=0x%x) ...\n", fqdn, c.client.seqn)
+		sg1.Log("Resolving %s (seqn=0x%x) ...\n", fqdn, c.client.seqn)
 	}
 
 	if c.client.client == nil {
@@ -256,7 +257,7 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 	}
 
 	if c.verbose {
-		fmt.Fprintf(os.Stderr, "Writing %d bytes: '%s' -> %s...\n", len(b), string(b), hex.EncodeToString(b))
+		sg1.Log("Writing %d bytes: '%s' -> %s...\n", len(b), string(b), hex.EncodeToString(b))
 	}
 
 	wrote := 0

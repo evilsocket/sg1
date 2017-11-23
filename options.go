@@ -26,7 +26,10 @@
  */
 package sg1
 
-const (
-	APP_NAME    = "sg1"
-	APP_VERSION = "1.0.0"
+var (
+	From       = "console"
+	To         = "console"
+	ModuleName = "raw"
+	Delay      = int(0)
+	BufferSize = 1024 * 1024
 )
