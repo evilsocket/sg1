@@ -60,9 +60,9 @@ func (m *Base64) Register() error {
 	return nil
 }
 
-func (m *Base64) Run(input, output channels.Channel, delay int) error {
+func (m *Base64) Run(input, output channels.Channel, buffer_size, delay int) error {
 	var err error
-	var block = make([]byte, 1024*1024)
+	var block = make([]byte, buffer_size)
 	var n int
 
 	for {

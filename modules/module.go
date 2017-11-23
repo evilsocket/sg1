@@ -36,5 +36,5 @@ type Module interface {
 
 	Register() error
 
-	Run(in, out channels.Channel, delay int) error
+	Run(in, out channels.Channel, buffer_size, delay int) error
 }

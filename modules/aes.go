@@ -117,14 +117,14 @@ func (m *AES) decrypt(ciphertext []byte, keystring string) (error, []byte) {
 	return nil, ciphertext
 }
 
-func (m *AES) Run(input, output channels.Channel, delay int) error {
+func (m *AES) Run(input, output channels.Channel, buffer_size, delay int) error {
 	if m.key == "" {
 		return fmt.Errorf("No AES key specified.")
 	}
 
 	var n int
 	var err error
-	var buff = make([]byte, 1024*1024)
+	var buff = make([]byte, buffer_size)
 
 	for {
 		if n, err = input.Read(buff); err != nil {

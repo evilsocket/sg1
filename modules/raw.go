@@ -50,10 +50,10 @@ func (m *Raw) Register() error {
 	return nil
 }
 
-func (m *Raw) Run(input, output channels.Channel, delay int) error {
+func (m *Raw) Run(input, output channels.Channel, buffer_size, delay int) error {
 	var n int
 	var err error
-	var buff = make([]byte, 1024*1024)
+	var buff = make([]byte, buffer_size)
 
 	for {
 		if n, err = input.Read(buff); err != nil {
