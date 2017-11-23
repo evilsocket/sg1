@@ -36,6 +36,8 @@
 
 SG1 is a wanna be swiss army knife for data encryption, exfiltration and covert communication. In its core `sg1` aims to be as simple to use as `nc` while maintaining high modularity internally, being a framework for bizarre exfiltration, data manipulation and transfer methods.
 
+Have you ever thought to have your chats or data transfers tunneled through encrypted, private and self deleting pastebins? What about sending that stuff to some dns client -> dns server bridge? Then TLS maybe? :D
+
 **WORK IN PROGRESS, DON'T JUDGE**
 
 [![baby-gopher](https://raw.githubusercontent.com/drnic/babygopher-site/gh-pages/images/babygopher-badge.png)](http://www.babygopher.org) [![Go Report Card](https://goreportcard.com/badge/github.com/evilsocket/sg1)](https://goreportcard.com/report/github.com/evilsocket/sg1)
