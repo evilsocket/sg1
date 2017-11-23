@@ -37,7 +37,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -74,22 +73,15 @@ type Pastebin struct {
 	api_key   string
 	user_key  string
 	seqn      uint32
-	mutex     *sync.Mutex
-	data      []byte
-	cond      *sync.Cond
+	chunks    chan []byte
 	stats     Stats
 }
 
 func NewPastebinChannel() *Pastebin {
-	c := &Pastebin{
+	return &Pastebin{
 		is_client: true,
-		mutex:     &sync.Mutex{},
-		cond:      nil,
-		data:      nil,
+		chunks:    make(chan []byte),
 	}
-
-	c.cond = sync.NewCond(c.mutex)
-	return c
 }
 
 func (c *Pastebin) Name() string {
@@ -191,7 +183,7 @@ func (c *Pastebin) Start() error {
 						// fmt.Fprintf(os.Stderr, "  packet.Data is %d bytes\n", len(packet.Data))
 
 						c.stats.TotalRead += int(packet.DataSize)
-						c.SetData(packet.Data)
+						c.chunks <- packet.Data
 					} else {
 						fmt.Fprintf(os.Stderr, "Error while decoding body: %s\n", err)
 					}
@@ -262,22 +254,6 @@ func (c *Pastebin) getPastes() (pastes []XmlPaste, err error) {
 	return pastes, nil
 }
 
-func (c *Pastebin) SetData(data []byte) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	c.data = data
-	c.cond.Signal()
-}
-
-func (c *Pastebin) GetData() []byte {
-	if c.data == nil {
-		c.mutex.Lock()
-		defer c.mutex.Unlock()
-		c.cond.Wait()
-	}
-	return c.data
-}
-
 func (c *Pastebin) deletePaste(paste XmlPaste) (resp string, err error) {
 	values := url.Values{}
 	values.Set("api_dev_key", c.api_key)
@@ -301,17 +277,7 @@ func (c *Pastebin) deletePaste(paste XmlPaste) (resp string, err error) {
 }
 
 func (c *Pastebin) Read(b []byte) (n int, err error) {
-	data := c.GetData()
-	if data == nil {
-		return 0, fmt.Errorf("EOF")
-	} else if len(b) < len(data) {
-		return 0, fmt.Errorf("Need more space.")
-	}
-
-	// fmt.Fprintf(os.Stderr, "Read %d bytes.\n", len(data))
-
-	c.SetData(nil)
-
+	data := <-c.chunks
 	for i, c := range data {
 		b[i] = c
 	}

@@ -35,7 +35,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"sync"
 )
 
 var (
@@ -52,9 +51,7 @@ type DNSClient struct {
 
 type DNSServer struct {
 	server dns.Server
-	mutex  *sync.Mutex
-	data   []byte
-	cond   *sync.Cond
+	chunks chan []byte
 }
 
 type DNSChannel struct {
@@ -69,7 +66,7 @@ type DNSChannel struct {
 }
 
 func NewDNSChannel() *DNSChannel {
-	s := &DNSChannel{
+	return &DNSChannel{
 		is_client: true,
 		verbose:   false,
 		domain:    "sg1.com",
@@ -78,9 +75,7 @@ func NewDNSChannel() *DNSChannel {
 
 		server: DNSServer{
 			server: dns.Server{Addr: ":53", Net: "udp"},
-			mutex:  &sync.Mutex{},
-			cond:   nil,
-			data:   nil,
+			chunks: make(chan []byte),
 		},
 
 		client: DNSClient{
@@ -88,10 +83,6 @@ func NewDNSChannel() *DNSChannel {
 			seqn:   0,
 		},
 	}
-
-	s.server.cond = sync.NewCond(s.server.mutex)
-
-	return s
 }
 
 func (c *DNSChannel) Name() string {
@@ -105,22 +96,6 @@ func (c *DNSChannel) Description() string {
 func (c *DNSChannel) Register() error {
 	flag.BoolVar(&c.verbose, "dns-verbose", false, "If set to true, DNS operations will be verbose.")
 	return nil
-}
-
-func (c *DNSChannel) SetData(data []byte) {
-	c.server.mutex.Lock()
-	defer c.server.mutex.Unlock()
-	c.server.data = data
-	c.server.cond.Signal()
-}
-
-func (c *DNSChannel) GetData() []byte {
-	if c.server.data == nil {
-		c.server.mutex.Lock()
-		defer c.server.mutex.Unlock()
-		c.server.cond.Wait()
-	}
-	return c.server.data
 }
 
 func parseQuestion(r *dns.Msg) (chunk []byte, domain string, err error) {
@@ -154,7 +129,7 @@ func (c *DNSChannel) setupServer(args string) error {
 			if c.domain == "" || c.domain == domain {
 				if packet, err := DecodePacket(chunk); err == nil {
 					c.stats.TotalRead += int(packet.DataSize)
-					c.SetData(packet.Data)
+					c.server.chunks <- packet.Data
 				}
 			}
 		} else {
@@ -242,15 +217,7 @@ func (c *DNSChannel) Read(b []byte) (n int, err error) {
 		return 0, fmt.Errorf("dns client can't be used for reading.")
 	}
 
-	data := c.GetData()
-	if data == nil {
-		return 0, fmt.Errorf("EOF")
-	} else if len(b) < len(data) {
-		return 0, fmt.Errorf("Need more space.")
-	}
-
-	c.SetData(nil)
-
+	data := <-c.server.chunks
 	for i, c := range data {
 		b[i] = c
 	}
