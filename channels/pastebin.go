@@ -200,7 +200,7 @@ func (c *Pastebin) Write(b []byte) (n int, err error) {
 
 	paste := Paste{
 		Text:       packet.Hex(),
-		Name:       fmt.Sprintf("SG1 0x%x", time.Now().UnixNano()/int64(time.Millisecond)),
+		Name:       fmt.Sprintf("SG1 0x%x", sg1.Time()),
 		Privacy:    Private,
 		ExpireDate: Hour,
 	}

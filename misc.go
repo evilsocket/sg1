@@ -26,13 +26,20 @@
  */
 package sg1
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 const (
 	KB = 1024
 	MB = 1024 * 1024
 	GB = 1024 * 1024 * 1024
 )
+
+func Time() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
+}
 
 func FormatBytes(bytes int) string {
 	if bytes < KB {
