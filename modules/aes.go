@@ -67,24 +67,64 @@ func (m *AES) Register() error {
 	return nil
 }
 
-func (m *AES) encrypt(block cipher.Block, input, output channels.Channel, delay int) error {
-	// generate and send the IV
-	iv := make([]byte, aes.BlockSize)
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return err
+func (m *AES) encrypt(plaintext []byte, keystring string) (error, []byte) {
+	key := []byte(keystring)
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return err, nil
 	}
 
-	if _, err := output.Write(iv); err != nil {
-		return err
+	// Empty array of 16 + plaintext length
+	// Include the IV at the beginning
+	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
+	// Slice of first 16 bytes
+	iv := ciphertext[:aes.BlockSize]
+	// Write 16 rand bytes to fill iv
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return err, nil
 	}
 
 	// Return an encrypted stream
-	var err error
-	var n int
-	var buff = make([]byte, aes.BlockSize)
-	var ciphertext = make([]byte, aes.BlockSize)
-
 	stream := cipher.NewCFBEncrypter(block, iv)
+	// Encrypt bytes from plaintext to ciphertext
+	stream.XORKeyStream(ciphertext[aes.BlockSize:], plaintext)
+
+	return nil, ciphertext
+}
+
+func (m *AES) decrypt(ciphertext []byte, keystring string) (error, []byte) {
+	key := []byte(keystring)
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return err, nil
+	}
+
+	// Before even testing the decryption,
+	// if the text is too small, then it is incorrect
+	if len(ciphertext) < aes.BlockSize {
+		return fmt.Errorf("Text is too short"), nil
+	}
+
+	// Get the 16 byte IV
+	iv := ciphertext[:aes.BlockSize]
+	// Remove the IV from the ciphertext
+	ciphertext = ciphertext[aes.BlockSize:]
+	// Return a decrypted stream
+	stream := cipher.NewCFBDecrypter(block, iv)
+	// Decrypt bytes from ciphertext
+	stream.XORKeyStream(ciphertext, ciphertext)
+
+	return nil, ciphertext
+}
+
+func (m *AES) Run(input, output channels.Channel, delay int) error {
+	if m.key == "" {
+		return fmt.Errorf("No AES key specified.")
+	}
+
+	var n int
+	var err error
+	var buff = make([]byte, 1024*1024)
 
 	for {
 		if n, err = input.Read(buff); err != nil {
@@ -95,9 +135,20 @@ func (m *AES) encrypt(block cipher.Block, input, output channels.Channel, delay 
 			}
 		}
 
-		stream.XORKeyStream(ciphertext, buff[:n])
+		var err error
+		var data []byte
 
-		if _, err = output.Write(ciphertext); err != nil {
+		if m.mode == "encrypt" {
+			err, data = m.encrypt(buff[:n], m.key)
+		} else if m.mode == "decrypt" {
+			err, data = m.decrypt(buff[:n], m.key)
+		}
+
+		if err != nil {
+			return err
+		}
+
+		if _, err = output.Write(data); err != nil {
 			return err
 		}
 
@@ -107,62 +158,4 @@ func (m *AES) encrypt(block cipher.Block, input, output channels.Channel, delay 
 	}
 
 	return nil
-}
-
-func (m *AES) decrypt(block cipher.Block, input, output channels.Channel, delay int) error {
-	// read iv
-	iv := make([]byte, aes.BlockSize)
-	if _, err := input.Read(iv); err != nil {
-		return fmt.Errorf("Could not read IV from input channel '%s'.", input.Name())
-	}
-
-	var err error
-	var ciphertext = make([]byte, aes.BlockSize)
-	var n int
-
-	stream := cipher.NewCFBDecrypter(block, iv)
-
-	for {
-		// read encrypted blocks
-		if n, err = input.Read(ciphertext); err != nil {
-			if err.Error() == "EOF" {
-				break
-			} else {
-				return err
-			}
-		}
-
-		var buff = make([]byte, n)
-		stream.XORKeyStream(buff, ciphertext)
-
-		if _, err = output.Write(buff); err != nil {
-			return err
-		}
-
-		if delay > 0 {
-			time.Sleep(time.Duration(delay) * time.Millisecond)
-		}
-	}
-
-	return nil
-}
-
-func (m *AES) Run(input, output channels.Channel, delay int) error {
-	if m.key == "" {
-		return fmt.Errorf("No AES key specified.")
-	}
-
-	// Create the AES cipher
-	block_cipher, err := aes.NewCipher([]byte(m.key))
-	if err != nil {
-		return err
-	}
-
-	if m.mode == "encrypt" {
-		return m.encrypt(block_cipher, input, output, delay)
-	} else if m.mode == "decrypt" {
-		return m.decrypt(block_cipher, input, output, delay)
-	} else {
-		return fmt.Errorf("Invalid --aes-mode parameter specified.")
-	}
 }
