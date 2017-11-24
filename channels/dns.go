@@ -177,8 +177,6 @@ func (c *DNSChannel) Setup(direction Direction, args string) (err error) {
 	} else {
 		return c.setupClient(args)
 	}
-
-	return nil
 }
 
 func (c *DNSChannel) Start() error {

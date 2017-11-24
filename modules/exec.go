@@ -69,7 +69,7 @@ func (m *Exec) Run(input, output channels.Channel, buffer_size, delay int) error
 			if cmdline != "" {
 				parts := strings.Fields(cmdline)
 				cmd = parts[0]
-				args = parts[1:len(parts)]
+				args = parts[1:]
 			}
 
 			path, err := exec.LookPath(cmd)
