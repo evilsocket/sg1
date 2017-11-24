@@ -27,6 +27,7 @@
 package channels
 
 import (
+	"github.com/evilsocket/sg1"
 	"net"
 	"sync"
 )
@@ -93,10 +94,13 @@ func (c *TCPChannel) Start() (err error) {
 		}
 
 		go func() {
+			sg1.Log("Started TCP server on %s ...\n\n", c.address)
+
 			for {
 				if conn, err := c.listener.Accept(); err == nil {
 					c.SetClient(conn)
 				} else {
+					sg1.Log("Error while accepting connection: %s\n", err)
 					break
 				}
 			}
