@@ -44,8 +44,8 @@ Have you ever thought to have your chats or data transfers tunneled through encr
 
 ## The Plan
 
-- [x] Working PoC to xfer data in one direction only ( `input channel` -> `module/raw` -> `output channel` ).
-- [ ] [**WIP**] Bidirectional communication, aka moving from the concept of `channel` to `tunnel`.
+- [x] Working utility to move data in one direction only ( `input channel` -> `module/raw` -> `output channel` ).
+- [ ] Bidirectional communication, aka moving from the concept of `channel` to `tunnel`. *( work in progress )*
 - [ ] SOCKS5 tunnel implementation, once done sg1 can be used for browsing and tunneling arbitrary TCP communications.
 - [ ] Deployment with `sg1_deploy` command, with "deploy tunnels" like `-deploy ssh:user:password@host:/path/` (deploy tunnels can be obfuscated as well).
 - [ ] Orchestrator to create a randomized and encrypted exfiltration chain of tunnels in a TOR-like network.
