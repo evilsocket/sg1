@@ -49,7 +49,7 @@ type TLSChannel struct {
 	key_file  string
 	address   string
 	is_client bool
-	config    tls.Config
+	config    *tls.Config
 
 	connection *tls.Conn
 	listener   net.Listener
@@ -66,6 +66,7 @@ func NewTLSChannel() *TLSChannel {
 		key_file:   "",
 		address:    "",
 		is_client:  true,
+		config:     nil,
 		connection: nil,
 		client:     nil,
 		listener:   nil,
@@ -123,7 +124,7 @@ func pemBlockForKey(priv interface{}) *pem.Block {
 	}
 }
 
-func (c *TLSChannel) getCertificateConfig() (conf tls.Config, err error) {
+func (c *TLSChannel) getCertificateConfig() (conf *tls.Config, err error) {
 	if c.pem_file == "" || c.key_file == "" {
 		sg1.Log("Generating new ECDSA certificate ...\n\n")
 
@@ -163,7 +164,7 @@ func (c *TLSChannel) getCertificateConfig() (conf tls.Config, err error) {
 			return conf, err
 		}
 
-		return tls.Config{
+		return &tls.Config{
 			Certificates:       []tls.Certificate{cert},
 			InsecureSkipVerify: true,
 		}, nil
@@ -175,7 +176,7 @@ func (c *TLSChannel) getCertificateConfig() (conf tls.Config, err error) {
 			return conf, err
 		}
 
-		return tls.Config{
+		return &tls.Config{
 			Certificates:       []tls.Certificate{cert},
 			InsecureSkipVerify: true,
 		}, nil
@@ -202,11 +203,11 @@ func (c *TLSChannel) Setup(direction Direction, args string) (err error) {
 
 func (c *TLSChannel) Start() (err error) {
 	if c.is_client {
-		if c.connection, err = tls.Dial("tcp", c.address, &c.config); err != nil {
+		if c.connection, err = tls.Dial("tcp", c.address, c.config); err != nil {
 			return err
 		}
 	} else {
-		if c.listener, err = tls.Listen("tcp", c.address, &c.config); err != nil {
+		if c.listener, err = tls.Listen("tcp", c.address, c.config); err != nil {
 			return err
 		}
 
