@@ -74,6 +74,7 @@ type Pastebin struct {
 	api_key   string
 	user_key  string
 	seqn      uint32
+	poll_time int
 	chunks    chan []byte
 	stats     Stats
 }
@@ -82,6 +83,7 @@ func NewPastebinChannel() *Pastebin {
 	return &Pastebin{
 		is_client: true,
 		preserve:  false,
+		poll_time: 1000,
 		chunks:    make(chan []byte),
 	}
 }
@@ -94,6 +96,7 @@ func (c *Pastebin) Register() error {
 	flag.StringVar(&c.api_key, "pastebin-api-key", "", "API developer key for the pastebin channel.")
 	flag.StringVar(&c.user_key, "pastebin-user-key", "", "API user key for the pastebin channel ( https://pastebin.com/api#8 ).")
 	flag.BoolVar(&c.preserve, "pastebin-preserve", c.preserve, "Do not delete pastes after reading them.")
+	flag.IntVar(&c.poll_time, "pastebin-poll-time", c.poll_time, "Number of milliseconds to wait between one pastebin API request and another.")
 	return nil
 }
 
@@ -125,32 +128,46 @@ func (c *Pastebin) Start() error {
 		sg1.Log("Running pastebin listener ...\n\n")
 
 		go func() {
+			var err error
+			var pastes = make([]XmlPaste, 0)
+			var wait = true
+
 			for {
-				pastes, err := c.getPastes()
-				if err != nil {
-					sg1.Log("Error while requesting pastes: %s.\n", err)
-					continue
+				// if we don't have pastes in the queue to process
+				if pastes == nil || len(pastes) == 0 {
+					// request new pastes
+					pastes, err = c.getPastes()
+					if err != nil {
+						sg1.Log("Error while requesting pastes: %s.\n", err)
+						continue
+					}
 				}
 
-				if len(pastes) > 0 {
-					// sort by title, get oldest and delete it
+				n_available := len(pastes)
+				if n_available > 0 {
+					// sort by title (which is the hex encoded timestamp) and get oldest
 					sort.Slice(pastes, func(i, j int) bool {
 						return pastes[i].title > pastes[j].title
 					})
-
 					oldest := pastes[0]
-
-					// sg1.Log("Requesting paste %v\n", oldest)
+					pastes = pastes[1:]
+					// if we have more than one paste available, this will make the loop
+					// skip the sleep, pass the first if without requesting new pastes
+					// and keep getting the ordered paste until the size of the queue
+					// is 1 again.
+					wait = (n_available == 1)
 
 					paste, err := c.getPaste(oldest.key)
 					if err != nil {
 						sg1.Log("Error while requesting paste %s: %s\n", oldest.key, err)
+						continue
 					}
 
 					// sg1.Log("Decoding paste body:\n%s\n", paste)
 					chunk, err := hex.DecodeString(paste)
 					if err != nil {
-						sg1.Log("Error while decoding body from hex: %s\n", err)
+						sg1.Log("Error while decoding body from hex '%s': %s\n", paste, err)
+						continue
 					}
 
 					// sg1.Log("Decoding packet from %d bytes.\n", len(chunk))
@@ -177,7 +194,9 @@ func (c *Pastebin) Start() error {
 					}
 				}
 
-				time.Sleep(time.Duration(1) * time.Second)
+				if wait {
+					time.Sleep(time.Duration(c.poll_time) * time.Millisecond)
+				}
 			}
 		}()
 	}
