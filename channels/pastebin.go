@@ -171,6 +171,9 @@ func (c *Pastebin) Start() error {
 					if c.preserve == false {
 						// sg1.Log("Deleting paste %s.\n", oldest.key)
 						_, err = c.deletePaste(oldest)
+						if err != nil {
+							sg1.Log("Error while deleting paste %s: %s\n", oldest.key, err)
+						}
 					}
 				}
 
