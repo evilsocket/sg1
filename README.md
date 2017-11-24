@@ -42,7 +42,7 @@ Have you ever thought to have your chats or data transfers tunneled through encr
 
 [![baby-gopher](https://raw.githubusercontent.com/drnic/babygopher-site/gh-pages/images/babygopher-badge.png)](http://www.babygopher.org) [![Go Report Card](https://goreportcard.com/badge/github.com/evilsocket/sg1)](https://goreportcard.com/report/github.com/evilsocket/sg1)
 
-## Stage of developement
+## The Plan
 
 - [x] Working PoC to xfer data in one direction only ( `input channel` -> `module/raw` -> `output channel` ).
 - [ ] [**WIP**] Bidirectional communication.
@@ -72,15 +72,17 @@ After compilation, you will find the `sg1` binary inside the `build` folder, you
 ## Contribute
 
 0) Read the code, love the code, fix the code.
-1) Grep for `TODO` and see how you can help.
-2) Implement a new module ( see `modules/raw.go` for very basic example or `modules/aes.go` for complete one ).
-3) Implement a new channel ( see `channels/*.go` ).
+1) Check `The Plan` section of this README and see what you can do.
+2) Grep for `TODO` and see how you can help.
+3) Implement a new module ( see `modules/raw.go` for very basic example or `modules/aes.go` for complete one ).
+4) Implement a new channel ( see `channels/*.go` ).
+5) Write tests because I'm a lazy s--t.
 
 ## Examples
 
 **Important Note**
 
-In case it is not obvious as I think, in the following examples you will always see 127.0.0.1, but that can be any ip, the tool is tunnelling data locally as a PoC but it also works among different computers on any network (as shown by one of the pictures).
+In the following examples you will always see 127.0.0.1, but that can be any ip, the tool is tunnelling data locally as a PoC but it also works among different computers on any network (as shown by one of the pictures).
 
 --
 
