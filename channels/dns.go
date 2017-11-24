@@ -33,7 +33,6 @@ import (
 	"github.com/evilsocket/sg1"
 	"github.com/miekg/dns"
 	"net"
-	"os"
 	"regexp"
 	"strconv"
 )
@@ -266,7 +265,7 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 		fqdn := fmt.Sprintf("%s.%s", packet.Hex(), c.domain)
 
 		if err := c.Lookup(fqdn); err != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", err)
+			sg1.Log("%s\n", err)
 		} else {
 			wrote += size
 			c.stats.TotalWrote += size
