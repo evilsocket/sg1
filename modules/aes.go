@@ -129,6 +129,8 @@ func (m *AES) Run(input, output channels.Channel, buffer_size, delay int) error 
 			err, data = m.encrypt(buff, m.key)
 		} else if m.mode == "decrypt" {
 			err, data = m.decrypt(buff, m.key)
+		} else {
+			err = fmt.Errorf("Unhandled AES mode '%s'.", m.mode)
 		}
 
 		if err != nil {
