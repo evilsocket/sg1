@@ -42,6 +42,15 @@ Have you ever thought to have your chats or data transfers tunneled through encr
 
 [![baby-gopher](https://raw.githubusercontent.com/drnic/babygopher-site/gh-pages/images/babygopher-badge.png)](http://www.babygopher.org) [![Go Report Card](https://goreportcard.com/badge/github.com/evilsocket/sg1)](https://goreportcard.com/report/github.com/evilsocket/sg1)
 
+## Stage of developement
+
+- [x] Working PoC to xfer data in one direction only ( `input channel` -> `module/raw` -> `output channel` ).
+- [ ] [**WIP**] Bidirectional communication.
+- [ ] SOCKS5 implementation, once done sg1 can be used for browsing and tunneling arbitrary TCP communications.
+- [ ] Deployment with `sg1-deploy` command, with "deploy channels" like `-deploy ssh:user:password@host:/path/` (deploy channels can be obfuscated as well).
+- [ ] Orchestrator `sg1-orchestrate` to create randomized and encrypted exfiltration chains in a TOR-like network.
+- [ ] Profit.
+
 ## Installation
 
 Make sure you have at least **go 1.8** in order to build `sg1`, then:
