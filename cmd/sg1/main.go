@@ -49,6 +49,7 @@ func init() {
 	channels.Register(channels.NewTCPChannel())
 	channels.Register(channels.NewTLSChannel())
 	channels.Register(channels.NewDNSChannel())
+	channels.Register(channels.NewICMPChannel())
 	channels.Register(channels.NewPastebinChannel())
 
 	modules.Register(modules.NewRaw())
