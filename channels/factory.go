@@ -86,6 +86,14 @@ func Factory(channel_name string, direction Direction) (channel Channel, err err
 		return nil, fmt.Errorf("No channel with name %s has been registered.", channel_name)
 	}
 
+	// Since we could use for both input and output the same channel, as in:
+	//
+	//	sg1 -in tcp:127.0.0.1:10010 -out tcp:www.google.com:80
+	//
+	// we need a different instance otherwise the call to the Setup method would
+	// overwrite the main registered instance members every time.
+	//
+	// This is why the Copy method.
 	channel = instance.Copy().(Channel)
 	if err := channel.Setup(direction, channel_args); err != nil {
 		return nil, err
