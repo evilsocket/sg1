@@ -59,6 +59,9 @@ func init() {
 	modules.Register(modules.NewExec())
 
 	flag.Usage = func() {
+		// TODO: Modules and channels specific options should be grouped instead of
+		// being described in the general usage section.
+
 		fmt.Printf("Usage of sg1:\n\n")
 		flag.PrintDefaults()
 
