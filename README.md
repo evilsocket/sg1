@@ -181,7 +181,7 @@ Examples:
 
 ## Examples
 
-In the following examples you will always see 127.0.0.1, but that can be any ip, the tool is tunnelling data locally as a PoC but it also works among different computers on any network (as shown by one of the pictures).
+In the following examples you will always see 127.0.0.1, but that can be any ip, the tool is tunnelling data locally as a PoC but it also works among different computers on any network (as shown by one of the pictures). Also note that the command line shown in those pictures might be different from this documentation, that is because the screenshots have been taken in different stages of developement, use this README as reference for the updated command line options.
 
 --
 
