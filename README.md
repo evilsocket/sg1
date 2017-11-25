@@ -44,7 +44,7 @@ Have you ever thought to have your chats or data transfers tunneled through encr
 
 ## The Plan
 
-- [x] Working utility to move data in one direction only ( `input channel` -> `module/raw` -> `output channel` ).
+- [x] Working utility to move data in one direction only ( `input channel` -> `module` -> `output channel` ).
 - [ ] Bidirectional communication, aka moving from the concept of `channel` to `tunnel`, each tunnel object should derive from [net.Conn](https://golang.org/pkg/net/#Conn) in order to use the Pipe method. *-work in progress-*
 - [ ] SOCKS5 tunnel implementation, once done sg1 can be used for browsing and tunneling arbitrary TCP communications.
 - [ ] Implement `sg1 -probe server-ip-here` and `sg1 -discover 0.0.0.0` commands, the sg1 client will use every possible channel to connect to the sg1 server and create a tunnel.
