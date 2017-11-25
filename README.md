@@ -88,7 +88,7 @@ The main `sg1` operation logic is:
         output.write(data)
     }
 
-Keep in mind that modules and channels can be piped one to another.
+Keep in mind that modules and channels can be piped one to another, just use `sg1 -h` to see a list of available channels and modules, try to pipe them and see what happens ^_^
 
 ### Modules
 
@@ -217,8 +217,6 @@ With bouncing to another host:
 
 Some `stdin` -> `dns packets` -> `pastebin temporary paste` -> `stdout` hops:
 ![hops](https://pbs.twimg.com/media/DPQ58EhW0AA7CFz.jpg:large)
-
-Just use `sg1 -h` to see a list of available channels and modules, try to pipe them and see what happens, you can also transfer files and make requests "bounce" to several machines with random AES keys ^_^
 
 ## License
 
