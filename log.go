@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"sync"
 )
 
 // https://misc.flogisoft.com/bash/tip_colors_and_formatting
@@ -18,13 +19,18 @@ const (
 	RESET = "\033[0m"
 )
 
+var (
+	logLock = &sync.Mutex{}
+)
+
 func Hex(buffer []byte) string {
 	return hex.EncodeToString(buffer)
 }
 
-// TODO: This should be made thread safe using a mutex in order to
-// avoid text overlapping on stderr.
 func Raw(format string, args ...interface{}) {
+	logLock.Lock()
+	defer logLock.Unlock()
+
 	fmt.Fprintf(os.Stderr, format, args...)
 }
 
