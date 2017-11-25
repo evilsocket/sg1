@@ -54,7 +54,6 @@ func DecodePacket(buffer []byte) (p *Packet, err error) {
 
 	seqn_buf := buffer[0:4]
 	size_buf := buffer[4:8]
-	// sg1.Log("seqn_buf=%s\nsize_buf=%s\n", hex.EncodeToString(seqn_buf), hex.EncodeToString(size_buf))
 	max_size := len(buffer) - p.HeaderSize()
 
 	// TODO: Check sequence number

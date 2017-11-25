@@ -83,6 +83,9 @@ func (c *ICMPChannel) Setup(direction Direction, args string) (err error) {
 	if args != "" {
 		c.address = args
 	}
+
+	sg1.Debug("Setup ICMP channel: direction=%d address=%s\n", direction, c.address)
+
 	return nil
 }
 
@@ -110,7 +113,7 @@ func (c *ICMPChannel) Start() (err error) {
 					continue
 				}
 
-				// sg1.Log("Read %d bytes of ICMP packet from %s .\n", n, peer)
+				sg1.Debug("Read %d bytes of ICMP packet from %s .\n", n, peer)
 
 				msg, err := icmp.ParseMessage(ProtocolICMP, buffer[:n])
 				if err != nil {
@@ -119,13 +122,18 @@ func (c *ICMPChannel) Start() (err error) {
 				}
 
 				if msg.Type == ipv4.ICMPTypeEcho {
+					sg1.Debug("Got ICMP echo.\n")
 					echo := msg.Body.(*icmp.Echo)
 					if packet, err := DecodePacket(echo.Data); err == nil {
+						sg1.Debug("Decoded packet of %d bytes from ICMP echo payload.\n", packet.DataSize)
+
 						c.stats.TotalRead += int(packet.DataSize)
 						c.chunks <- packet.Data
 					} else {
 						sg1.Log("Error while decoding ICMP payload: %s.\n", err)
 					}
+				} else {
+					sg1.Debug("ICMP packet is not an echo.\n")
 				}
 			}
 		}()
@@ -158,10 +166,14 @@ func (c *ICMPChannel) Read(b []byte) (n int, err error) {
 		b[i] = c
 	}
 
+	sg1.Debug("Read %d bytes from ICMP listener.\n", len(data))
+
 	return len(data), nil
 }
 
 func (c *ICMPChannel) sendPacket(packet *Packet) error {
+	sg1.Debug("Encapsulating %d bytes of packet in ICMP echo payload for address %s.\n", packet.DataSize, c.address)
+
 	data := packet.Raw()
 	msg := icmp.Message{
 		Type: ipv4.ICMPTypeEcho,
@@ -189,20 +201,27 @@ func (c *ICMPChannel) Write(b []byte) (n int, err error) {
 		return 0, fmt.Errorf("icmp server can't be used for writing.")
 	}
 
+	sg1.Debug("Writing %d bytes to ICMP channel as chunks of %d bytes.\n", len(b), ICMPChunkSize)
+
 	wrote := 0
 	for _, chunk := range BufferToChunks(b, ICMPChunkSize) {
 		size := len(chunk)
 		packet := NewPacket(c.seqn, uint32(size), chunk)
 
+		sg1.Debug("Sending %d bytes of encoded packet.\n", packet.DataSize)
+
 		if err := c.sendPacket(packet); err != nil {
-			sg1.Log("%s\n", err)
+			sg1.Log("Error while sending ICMP packet: %s\n", err)
 		} else {
+			sg1.Debug("Wrote %d bytes.\n", size)
 			wrote += size
 			c.stats.TotalWrote += size
 		}
 
 		c.seqn++
 	}
+
+	sg1.Debug("Wrote %d bytes to ICMP channel.\n", wrote)
 
 	return wrote, nil
 }

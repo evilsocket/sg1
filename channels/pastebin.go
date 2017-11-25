@@ -118,6 +118,8 @@ func (c *Pastebin) Setup(direction Direction, args string) error {
 		return fmt.Errorf("Usage: pastebin:YOUR-API-DEV-KEY/YOUR-API-USER-KEY")
 	}
 
+	sg1.Debug("Setup pastebin channel: direction=%d api_key='%s' user_key='%s'\n", c.api_key, c.user_key)
+
 	return nil
 }
 
@@ -135,12 +137,16 @@ func (c *Pastebin) Start() error {
 			for {
 				// if we don't have pastes in the queue to process
 				if pastes == nil || len(pastes) == 0 {
+					sg1.Debug("No queued pastes, requesting to API ...\n")
+
 					// request new pastes
 					pastes, err = c.getPastes()
 					if err != nil {
 						sg1.Log("Error while requesting pastes: %s.\n", err)
 						continue
 					}
+				} else {
+					sg1.Debug("Got %d pastes to process.\n", len(pastes))
 				}
 
 				n_available := len(pastes)
@@ -157,27 +163,27 @@ func (c *Pastebin) Start() error {
 					// is 1 again.
 					wait = (n_available == 1)
 
+					sg1.Debug("Oldest paste to process is %s, requesting to API ...\n", oldest.key)
+
 					paste, err := c.getPaste(oldest.key)
 					if err != nil {
 						sg1.Log("Error while requesting paste %s: %s\n", oldest.key, err)
 						continue
 					}
 
-					// sg1.Log("Decoding paste body:\n%s\n", paste)
+					sg1.Debug("Decoding paste body of %d bytes.\n", len(paste))
 					chunk, err := hex.DecodeString(paste)
 					if err != nil {
 						sg1.Log("Error while decoding body from hex '%s': %s\n", paste, err)
 						continue
 					}
 
-					// sg1.Log("Decoding packet from %d bytes.\n", len(chunk))
+					sg1.Debug("Decoding packet from %d bytes.\n", len(chunk))
 					if packet, err := DecodePacket(chunk); err == nil {
 						// fix data size
 						packet.DataSize = uint32(len(packet.Data))
 
-						// sg1.Log("  packet.DataSize = %d\n", packet.DataSize)
-						// sg1.Log("  packet.Data is %s\n", hex.EncodeToString(packet.Data))
-						// sg1.Log("  packet.Data is %d bytes\n", len(packet.Data))
+						sg1.Debug("Decoded packet of %d bytes.\n", packet.DataSize)
 
 						c.stats.TotalRead += int(packet.DataSize)
 						c.chunks <- packet.Data
@@ -186,7 +192,7 @@ func (c *Pastebin) Start() error {
 					}
 
 					if c.preserve == false {
-						// sg1.Log("Deleting paste %s.\n", oldest.key)
+						sg1.Debug("Deleting paste %s.\n", oldest.key)
 						_, err = c.deletePaste(oldest)
 						if err != nil {
 							sg1.Log("Error while deleting paste %s: %s\n", oldest.key, err)
@@ -195,6 +201,7 @@ func (c *Pastebin) Start() error {
 				}
 
 				if wait {
+					sg1.Debug("Waiting for %d milliseconds ...\n", c.poll_time)
 					time.Sleep(time.Duration(c.poll_time) * time.Millisecond)
 				}
 			}
@@ -219,6 +226,9 @@ func (c *Pastebin) Read(b []byte) (n int, err error) {
 	}
 	size := len(data)
 	c.stats.TotalRead += size
+
+	sg1.Debug("Read %d bytes from pastebin channel.\n", size)
+
 	return size, nil
 }
 
@@ -240,8 +250,13 @@ func (c *Pastebin) Write(b []byte) (n int, err error) {
 		return 0, err
 	} else if strings.Contains(resp, "://") {
 		sg1.Log("\n%s\n", resp)
+
+		size := len(b)
+
 		c.seqn++
-		c.stats.TotalWrote += len(b)
+		c.stats.TotalWrote += size
+
+		sg1.Debug("Wrote %d bytes to pastebin channel.\n", size)
 		return n, nil
 	} else {
 		return 0, fmt.Errorf("Could not send paste: %s", resp)

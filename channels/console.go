@@ -27,6 +27,7 @@
 package channels
 
 import (
+	"github.com/evilsocket/sg1"
 	"os"
 )
 
@@ -71,6 +72,9 @@ func (c *Console) Read(b []byte) (n int, err error) {
 	if n > 0 {
 		c.stats.TotalRead += n
 	}
+
+	sg1.Debug("Read %d bytes from stdin.\n", n)
+
 	return n, err
 }
 
@@ -79,6 +83,9 @@ func (c *Console) Write(b []byte) (n int, err error) {
 	if n > 0 {
 		c.stats.TotalWrote += n
 	}
+
+	sg1.Debug("Wrote %d bytes to stdout.\n", n)
+
 	return n, err
 }
 

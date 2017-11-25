@@ -27,9 +27,10 @@
 package sg1
 
 var (
-	From       = "console"
-	To         = "console"
-	ModuleName = "raw"
-	Delay      = int(0)
-	BufferSize = 1024 * 1024
+	From          = "console"
+	To            = "console"
+	ModuleName    = "raw"
+	Delay         = int(0)
+	BufferSize    = 1024 * 1024
+	DebugMessages = false
 )

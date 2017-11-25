@@ -198,11 +198,15 @@ func (c *TLSChannel) Setup(direction Direction, args string) (err error) {
 
 	c.address = args
 
+	sg1.Debug("Setup tls channel: direction=%d address='%s'.\n", direction, c.address)
+
 	return nil
 }
 
 func (c *TLSChannel) Start() (err error) {
 	if c.is_client {
+		sg1.Log("Connecting to TLS endpoint %s ...\n\n", c.address)
+
 		if c.connection, err = tls.Dial("tcp", c.address, c.config); err != nil {
 			return err
 		}
@@ -212,10 +216,14 @@ func (c *TLSChannel) Start() (err error) {
 		}
 
 		go func() {
+			sg1.Log("Started TLS server on %s ...\n\n", c.address)
+
 			for {
 				if conn, err := c.listener.Accept(); err == nil {
+					sg1.Debug("Got client connection %+v.\n", conn)
 					c.SetClient(conn)
 				} else {
+					sg1.Log("Error while accepting connection: %s\n", err)
 					break
 				}
 			}
@@ -237,6 +245,8 @@ func (c *TLSChannel) SetClient(con net.Conn) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	sg1.Debug("Setting client.\n")
+
 	if c.client != nil {
 		c.client.Close()
 		c.client = nil
@@ -248,9 +258,11 @@ func (c *TLSChannel) SetClient(con net.Conn) {
 
 func (c *TLSChannel) WaitForClient() {
 	if c.is_client == false && c.client == nil {
+		sg1.Debug("Waiting for client ...\n")
 		c.mutex.Lock()
 		defer c.mutex.Unlock()
 		c.cond.Wait()
+		sg1.Debug("Got client.\n")
 	}
 }
 
@@ -262,8 +274,12 @@ func (c *TLSChannel) GetClient() net.Conn {
 func (c *TLSChannel) Read(b []byte) (n int, err error) {
 	if c.is_client == false {
 		n, err = c.GetClient().Read(b)
+
+		sg1.Debug("Read %d bytes from client.\n", n)
 	} else {
 		n, err = c.connection.Read(b)
+
+		sg1.Debug("Read %d bytes from server.\n", n)
 	}
 
 	if n > 0 {
@@ -275,8 +291,12 @@ func (c *TLSChannel) Read(b []byte) (n int, err error) {
 func (c *TLSChannel) Write(b []byte) (n int, err error) {
 	if c.is_client == false {
 		n, err = c.GetClient().Write(b)
+
+		sg1.Debug("Wrote %d bytes to client.\n", n)
 	} else {
 		n, err = c.connection.Write(b)
+
+		sg1.Debug("Wrote %d bytes to server.\n", n)
 	}
 
 	if n > 0 {

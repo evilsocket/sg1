@@ -3,3 +3,4 @@ build.go
 build
 certs
 get_pastebin_user_key.*
+pastebin_api.sh

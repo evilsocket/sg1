@@ -28,7 +28,6 @@ package channels
 
 import (
 	"encoding/hex"
-	"flag"
 	"fmt"
 	"github.com/evilsocket/sg1"
 	"github.com/miekg/dns"
@@ -56,7 +55,6 @@ type DNSServer struct {
 
 type DNSChannel struct {
 	is_client bool
-	verbose   bool
 	domain    string
 	address   string
 	port      int
@@ -68,8 +66,7 @@ type DNSChannel struct {
 func NewDNSChannel() *DNSChannel {
 	return &DNSChannel{
 		is_client: true,
-		verbose:   false,
-		domain:    "sg1.com",
+		domain:    "google.com",
 		address:   "",
 		port:      53,
 
@@ -94,7 +91,6 @@ func (c *DNSChannel) Description() string {
 }
 
 func (c *DNSChannel) Register() error {
-	flag.BoolVar(&c.verbose, "dns-verbose", false, "If set to true, DNS operations will be verbose.")
 	return nil
 }
 
@@ -125,15 +121,22 @@ func (c *DNSChannel) setupServer(args string) error {
 	}
 
 	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
+		sg1.Debug("Got DNS message.\n")
 		if chunk, domain, err := parseQuestion(r); err == nil {
 			if c.domain == "" || c.domain == domain {
 				if packet, err := DecodePacket(chunk); err == nil {
+					sg1.Debug("Decoded packet of %d bytes.\n", packet.DataSize)
+
 					c.stats.TotalRead += int(packet.DataSize)
 					c.server.chunks <- packet.Data
+				} else {
+					sg1.Log("Error while decoding packet: %s\n", err)
 				}
+			} else {
+				sg1.Debug("Domain did not match '%s': %s.\n", c.domain, domain)
 			}
 		} else {
-			sg1.Log("Error: %s\n", err)
+			sg1.Log("Error while parsing DNS message: %s\n", err)
 		}
 
 		m := new(dns.Msg)
@@ -170,6 +173,8 @@ func (c *DNSChannel) Setup(direction Direction, args string) (err error) {
 			return err
 		}
 	}
+
+	sg1.Debug("Setup DNS channel from args '%s': direction=%d domain='%s' resolver='%s' port=%d\n", args, direction, c.domain, c.address, c.port)
 
 	if direction == INPUT_CHANNEL {
 		return c.setupServer(args)
@@ -220,20 +225,22 @@ func (c *DNSChannel) Read(b []byte) (n int, err error) {
 		b[i] = c
 	}
 
+	sg1.Debug("Read %d bytes from DNS listener.\n", len(data))
+
 	return len(data), nil
 }
 
 func (c *DNSChannel) Lookup(fqdn string) error {
-	if c.verbose {
-		sg1.Log("Resolving %s (seqn=0x%x) ...\n", fqdn, c.client.seqn)
-	}
-
 	if c.client.client == nil {
+		sg1.Debug("Resolving %s (seqn=0x%x) ...\n", fqdn, c.client.seqn)
+
 		if _, err := net.LookupHost(fqdn); err != nil {
 			return err
 		}
 
 	} else {
+		sg1.Debug("Sending DNS question for %s to resolver %s:%d.\n", fqdn, c.address, c.port)
+
 		m1 := new(dns.Msg)
 		m1.Id = dns.Id()
 		m1.RecursionDesired = true
@@ -253,20 +260,21 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 		return 0, fmt.Errorf("dns server can't be used for writing.")
 	}
 
-	if c.verbose {
-		sg1.Log("Writing %d bytes: '%s' -> %s...\n", len(b), string(b), hex.EncodeToString(b))
-	}
+	sg1.Debug("Sending %d bytes in chunks of %d bytes...\n", len(b), DNSChunkSize)
 
 	wrote := 0
 	for _, chunk := range BufferToChunks(b, DNSChunkSize) {
 		size := len(chunk)
 		packet := NewPacket(c.client.seqn, uint32(size), chunk)
 
+		sg1.Debug("Encoding chunk of %d bytes.\n", size)
+
 		fqdn := fmt.Sprintf("%s.%s", packet.Hex(), c.domain)
 
 		if err := c.Lookup(fqdn); err != nil {
-			sg1.Log("%s\n", err)
+			sg1.Log("Error while performing DNS lookup: %s\n", err)
 		} else {
+			sg1.Debug("Wrote %d bytes to DNS client.\n", size)
 			wrote += size
 			c.stats.TotalWrote += size
 		}

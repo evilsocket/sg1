@@ -80,11 +80,15 @@ func (c *TCPChannel) Setup(direction Direction, args string) (err error) {
 		return err
 	}
 
+	sg1.Debug("Setup tcp channel: direction=%d address=%s\n", direction, args)
+
 	return nil
 }
 
 func (c *TCPChannel) Start() (err error) {
 	if c.is_client {
+		sg1.Log("Connecting to TCP endpoint %s ...\n\n", c.address)
+
 		if c.connection, err = net.DialTCP("tcp", nil, c.address); err != nil {
 			return err
 		}
@@ -98,6 +102,7 @@ func (c *TCPChannel) Start() (err error) {
 
 			for {
 				if conn, err := c.listener.Accept(); err == nil {
+					sg1.Debug("Got client connection %+v.\n", conn)
 					c.SetClient(conn)
 				} else {
 					sg1.Log("Error while accepting connection: %s\n", err)
@@ -122,6 +127,8 @@ func (c *TCPChannel) SetClient(con net.Conn) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	sg1.Debug("Setting client.\n")
+
 	if c.client != nil {
 		c.client.Close()
 		c.client = nil
@@ -133,9 +140,11 @@ func (c *TCPChannel) SetClient(con net.Conn) {
 
 func (c *TCPChannel) WaitForClient() {
 	if c.is_client == false && c.client == nil {
+		sg1.Debug("Waiting for client ...\n")
 		c.mutex.Lock()
 		defer c.mutex.Unlock()
 		c.cond.Wait()
+		sg1.Debug("Got client.\n")
 	}
 }
 
@@ -147,8 +156,12 @@ func (c *TCPChannel) GetClient() net.Conn {
 func (c *TCPChannel) Read(b []byte) (n int, err error) {
 	if c.is_client == false {
 		n, err = c.GetClient().Read(b)
+
+		sg1.Debug("Read %d bytes from client.\n", n)
 	} else {
 		n, err = c.connection.Read(b)
+
+		sg1.Debug("Read %d bytes from server.\n", n)
 	}
 
 	if n > 0 {
@@ -160,8 +173,12 @@ func (c *TCPChannel) Read(b []byte) (n int, err error) {
 func (c *TCPChannel) Write(b []byte) (n int, err error) {
 	if c.is_client == false {
 		n, err = c.GetClient().Write(b)
+
+		sg1.Debug("Wrote %d bytes to client.\n", n)
 	} else {
 		n, err = c.connection.Write(b)
+
+		sg1.Debug("Wrote %d bytes to server.\n", n)
 	}
 
 	if n > 0 {

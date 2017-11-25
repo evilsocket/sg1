@@ -44,6 +44,7 @@ func init() {
 	flag.StringVar(&sg1.ModuleName, "module", sg1.ModuleName, "Module name to use.")
 	flag.IntVar(&sg1.Delay, "delay", sg1.Delay, "Delay in milliseconds to wait between one I/O loop and another, or 0 for no delay.")
 	flag.IntVar(&sg1.BufferSize, "buffer-size", sg1.BufferSize, "Buffer size to use while reading data to input and writing to output.")
+	flag.BoolVar(&sg1.DebugMessages, "debug", sg1.DebugMessages, "Enable debug messages.")
 
 	channels.Register(channels.NewConsoleChannel())
 	channels.Register(channels.NewTCPChannel())
