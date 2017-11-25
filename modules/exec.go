@@ -61,7 +61,7 @@ func (m *Exec) Run(input, output channels.Channel, buffer_size, delay int) error
 		cmdline = strings.Trim(cmdline, " \x00\t\r\n")
 
 		if cmdline != "" {
-			// sg1.Log("Parsing and executing command line (%d bytes) '%s'.\n", len(buff), cmdline)
+			sg1.Debug("Parsing and executing command line (%d bytes) '%s'.\n", len(buff), cmdline)
 
 			cmd := ""
 			args := []string{}
@@ -74,13 +74,13 @@ func (m *Exec) Run(input, output channels.Channel, buffer_size, delay int) error
 
 			path, err := exec.LookPath(cmd)
 			if err != nil {
-				sg1.Log("Error while looking path of '%s': %s.\n", cmd, err)
+				sg1.Error("Error while looking path of '%s': %s.\n", cmd, err)
 				cmdout = []byte(err.Error())
 			} else {
-				// sg1.Log("  path='%s' %d args='%s'\n", path, len(args), args)
+				sg1.Debug("  path='%s' %d args='%s'\n", path, len(args), args)
 				raw, err := exec.Command(path, args...).CombinedOutput()
 				if err != nil {
-					sg1.Log("Error while executing '%s %s': %s.\n", path, args, err)
+					sg1.Error("Error while executing '%s %s': %s.\n", path, args, err)
 					cmdout = []byte(err.Error())
 				} else {
 					cmdout = []byte(raw)

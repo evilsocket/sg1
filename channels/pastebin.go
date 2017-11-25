@@ -142,7 +142,7 @@ func (c *Pastebin) Start() error {
 					// request new pastes
 					pastes, err = c.getPastes()
 					if err != nil {
-						sg1.Log("Error while requesting pastes: %s.\n", err)
+						sg1.Error("Error while requesting pastes: %s.\n", err)
 						continue
 					}
 				} else {
@@ -167,14 +167,14 @@ func (c *Pastebin) Start() error {
 
 					paste, err := c.getPaste(oldest.key)
 					if err != nil {
-						sg1.Log("Error while requesting paste %s: %s\n", oldest.key, err)
+						sg1.Error("Error while requesting paste %s: %s\n", oldest.key, err)
 						continue
 					}
 
 					sg1.Debug("Decoding paste body of %d bytes.\n", len(paste))
 					chunk, err := hex.DecodeString(paste)
 					if err != nil {
-						sg1.Log("Error while decoding body from hex '%s': %s\n", paste, err)
+						sg1.Error("Error while decoding body from hex '%s': %s\n", paste, err)
 						continue
 					}
 
@@ -188,14 +188,14 @@ func (c *Pastebin) Start() error {
 						c.stats.TotalRead += int(packet.DataSize)
 						c.chunks <- packet.Data
 					} else {
-						sg1.Log("Error while decoding body: %s\n", err)
+						sg1.Error("Error while decoding body: %s\n", err)
 					}
 
 					if c.preserve == false {
 						sg1.Debug("Deleting paste %s.\n", oldest.key)
 						_, err = c.deletePaste(oldest)
 						if err != nil {
-							sg1.Log("Error while deleting paste %s: %s\n", oldest.key, err)
+							sg1.Error("Error while deleting paste %s: %s\n", oldest.key, err)
 						}
 					}
 				}
@@ -249,7 +249,7 @@ func (c *Pastebin) Write(b []byte) (n int, err error) {
 	if err != nil {
 		return 0, err
 	} else if strings.Contains(resp, "://") {
-		sg1.Log("\n%s\n", resp)
+		sg1.Raw("\n%s\n", resp)
 
 		size := len(b)
 

@@ -129,19 +129,19 @@ func (c *DNSChannel) setupServer(args string) error {
 
 					c.stats.TotalRead += int(packet.DataSize)
 					c.server.chunks <- packet.Data
+
+					m := new(dns.Msg)
+					m.SetReply(r)
+					w.WriteMsg(m)
 				} else {
-					sg1.Log("Error while decoding packet: %s\n", err)
+					sg1.Error("Error while decoding packet: %s\n", err)
 				}
 			} else {
 				sg1.Debug("Domain did not match '%s': %s.\n", c.domain, domain)
 			}
 		} else {
-			sg1.Log("Error while parsing DNS message: %s\n", err)
+			sg1.Warning("Error while parsing DNS message: %s\n", err)
 		}
-
-		m := new(dns.Msg)
-		m.SetReply(r)
-		w.WriteMsg(m)
 	})
 
 	return nil
@@ -272,7 +272,7 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 		fqdn := fmt.Sprintf("%s.%s", packet.Hex(), c.domain)
 
 		if err := c.Lookup(fqdn); err != nil {
-			sg1.Log("Error while performing DNS lookup: %s\n", err)
+			sg1.Error("Error while performing DNS lookup: %s\n", err)
 		} else {
 			sg1.Debug("Wrote %d bytes to DNS client.\n", size)
 			wrote += size

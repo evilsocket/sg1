@@ -70,7 +70,7 @@ func (m *Base64) Run(input, output channels.Channel, buffer_size, delay int) err
 		} else {
 			decoded, err := b64.StdEncoding.DecodeString(string(buff))
 			if err != nil {
-				sg1.Log("%s\n", err)
+				sg1.Error("%s\n", err)
 				return 0, nil, err
 			}
 			output = decoded

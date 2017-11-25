@@ -126,7 +126,7 @@ func pemBlockForKey(priv interface{}) *pem.Block {
 
 func (c *TLSChannel) getCertificateConfig() (conf *tls.Config, err error) {
 	if c.pem_file == "" || c.key_file == "" {
-		sg1.Log("Generating new ECDSA certificate ...\n\n")
+		sg1.Log("Generating new ECDSA certificate ...\n")
 
 		priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 		if err != nil {
@@ -169,7 +169,7 @@ func (c *TLSChannel) getCertificateConfig() (conf *tls.Config, err error) {
 			InsecureSkipVerify: true,
 		}, nil
 	} else {
-		sg1.Log("Loading X509 key pair from %s (%s).\n\n", c.pem_file, c.key_file)
+		sg1.Log("Loading X509 key pair from %s (%s).\n", c.pem_file, c.key_file)
 
 		cert, err := tls.LoadX509KeyPair(c.pem_file, c.key_file)
 		if err != nil {
@@ -205,7 +205,7 @@ func (c *TLSChannel) Setup(direction Direction, args string) (err error) {
 
 func (c *TLSChannel) Start() (err error) {
 	if c.is_client {
-		sg1.Log("Connecting to TLS endpoint %s ...\n\n", c.address)
+		sg1.Log("Connecting to TLS endpoint %s ...\n", c.address)
 
 		if c.connection, err = tls.Dial("tcp", c.address, c.config); err != nil {
 			return err
@@ -216,11 +216,11 @@ func (c *TLSChannel) Start() (err error) {
 		}
 
 		go func() {
-			sg1.Log("Started TLS server on %s ...\n\n", c.address)
+			sg1.Log("Started TLS server on %s ...\n", c.address)
 
 			for {
 				if conn, err := c.listener.Accept(); err == nil {
-					sg1.Debug("Got client connection %+v.\n", conn)
+					sg1.Debug("Got client connection %v.\n", conn)
 					c.SetClient(conn)
 				} else {
 					sg1.Log("Error while accepting connection: %s\n", err)

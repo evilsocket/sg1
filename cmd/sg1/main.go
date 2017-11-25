@@ -80,13 +80,13 @@ func init() {
 }
 
 func onError(err error) {
-	sg1.Log("%s\n", err)
-	sg1.Log("\n")
+	sg1.Error("%s\n", err)
+	sg1.Raw("\n")
 	os.Exit(1)
 }
 
 func main() {
-	sg1.Log("%s v%s ( built from %s on %s for %s %s )\n\n", sg1.APP_NAME, sg1.APP_VERSION, sg1.APP_BUILD_BRANCH, sg1.APP_BUILD_DATE, runtime.GOOS, runtime.GOARCH)
+	sg1.Raw("%s v%s ( built from %s on %s for %s %s )\n\n", sg1.APP_NAME, sg1.APP_VERSION, sg1.APP_BUILD_BRANCH, sg1.APP_BUILD_DATE, runtime.GOOS, runtime.GOARCH)
 
 	flag.Parse()
 
@@ -108,9 +108,9 @@ func main() {
 	}
 
 	if module.Name() == "raw" {
-		sg1.Log("  %s --> %s\n\n", input.Name(), output.Name())
+		sg1.Log("%s --> %s\n", input.Name(), output.Name())
 	} else {
-		sg1.Log("  %s --> [%s] --> %s\n\n", input.Name(), module.Name(), output.Name())
+		sg1.Log("%s --> [%s] --> %s\n", input.Name(), module.Name(), output.Name())
 	}
 
 	if err = input.Start(); err != nil {
@@ -124,7 +124,7 @@ func main() {
 	start := time.Now()
 
 	if err = module.Run(input, output, sg1.BufferSize, sg1.Delay); err != nil {
-		fmt.Println(err)
+		sg1.Error("%s.\n", err)
 	} else {
 		elapsed := time.Since(start)
 		es := elapsed.Seconds()
@@ -138,11 +138,11 @@ func main() {
 			bps = float64(wrote) / es
 		}
 
-		sg1.Log("\n\n")
-		sg1.Log("Total read    : %s\n", sg1.FormatBytes(read))
-		sg1.Log("Total written : %s\n", sg1.FormatBytes(wrote))
-		sg1.Log("Time elapsed  : %s\n", elapsed)
-		sg1.Log("Speed         : %s\n", sg1.FormatSpeed(bps))
-		sg1.Log("\n")
+		sg1.Raw("\n\n")
+		sg1.Raw("Total read    : %s\n", sg1.FormatBytes(read))
+		sg1.Raw("Total written : %s\n", sg1.FormatBytes(wrote))
+		sg1.Raw("Time elapsed  : %s\n", elapsed)
+		sg1.Raw("Speed         : %s\n", sg1.FormatSpeed(bps))
+		sg1.Raw("\n")
 	}
 }

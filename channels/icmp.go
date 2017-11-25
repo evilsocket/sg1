@@ -100,16 +100,15 @@ func (c *ICMPChannel) Start() (err error) {
 		}
 
 		go func() {
-			sg1.Log("Started ICMP listener on %s ...\n\n", c.address)
-
 			defer c.conn.Close()
 
-			buffer := make([]byte, ICMPBufferSize)
+			sg1.Log("Started ICMP listener on %s ...\n\n", c.address)
 
+			buffer := make([]byte, ICMPBufferSize)
 			for {
 				n, peer, err := c.conn.ReadFrom(buffer)
 				if err != nil {
-					sg1.Log("Error while reading ICMP packet: %s.\n", err)
+					sg1.Warning("Error while reading ICMP packet: %s.\n", err)
 					continue
 				}
 
@@ -117,7 +116,7 @@ func (c *ICMPChannel) Start() (err error) {
 
 				msg, err := icmp.ParseMessage(ProtocolICMP, buffer[:n])
 				if err != nil {
-					sg1.Log("Error while parsing ICMP packet sent by %s: %s.\n", peer, err)
+					sg1.Warning("Error while parsing ICMP packet sent by %s: %s.\n", peer, err)
 					continue
 				}
 
@@ -130,7 +129,7 @@ func (c *ICMPChannel) Start() (err error) {
 						c.stats.TotalRead += int(packet.DataSize)
 						c.chunks <- packet.Data
 					} else {
-						sg1.Log("Error while decoding ICMP payload: %s.\n", err)
+						sg1.Error("Error while decoding ICMP payload: %s.\n", err)
 					}
 				} else {
 					sg1.Debug("ICMP packet is not an echo.\n")
@@ -211,7 +210,7 @@ func (c *ICMPChannel) Write(b []byte) (n int, err error) {
 		sg1.Debug("Sending %d bytes of encoded packet.\n", packet.DataSize)
 
 		if err := c.sendPacket(packet); err != nil {
-			sg1.Log("Error while sending ICMP packet: %s\n", err)
+			sg1.Error("Error while sending ICMP packet: %s\n", err)
 		} else {
 			sg1.Debug("Wrote %d bytes.\n", size)
 			wrote += size

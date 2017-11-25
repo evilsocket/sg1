@@ -102,10 +102,10 @@ func (c *TCPChannel) Start() (err error) {
 
 			for {
 				if conn, err := c.listener.Accept(); err == nil {
-					sg1.Debug("Got client connection %+v.\n", conn)
+					sg1.Debug("Got client connection %v.\n", conn)
 					c.SetClient(conn)
 				} else {
-					sg1.Log("Error while accepting connection: %s\n", err)
+					sg1.Error("Error while accepting connection: %s\n", err)
 					break
 				}
 			}

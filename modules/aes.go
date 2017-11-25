@@ -32,6 +32,7 @@ import (
 	"crypto/rand"
 	"flag"
 	"fmt"
+	"github.com/evilsocket/sg1"
 	"github.com/evilsocket/sg1/channels"
 	"io"
 )
@@ -134,6 +135,7 @@ func (m *AES) Run(input, output channels.Channel, buffer_size, delay int) error 
 		}
 
 		if err != nil {
+			sg1.Error("%s\n", err)
 			return 0, nil, err
 		}
 
