@@ -180,9 +180,6 @@ func (c *Pastebin) Start() error {
 
 					sg1.Debug("Decoding packet from %d bytes.\n", len(chunk))
 					if packet, err := DecodePacket(chunk); err == nil {
-						// fix data size
-						packet.DataSize = uint32(len(packet.Data))
-
 						sg1.Debug("Decoded packet of %d bytes.\n", packet.DataSize)
 
 						c.stats.TotalRead += int(packet.DataSize)

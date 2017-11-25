@@ -1,6 +1,7 @@
 package sg1
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 )
@@ -16,6 +17,10 @@ const (
 
 	RESET = "\033[0m"
 )
+
+func Hex(buffer []byte) string {
+	return hex.EncodeToString(buffer)
+}
 
 // TODO: This should be made thread safe using a mutex in order to
 // avoid text overlapping on stderr.

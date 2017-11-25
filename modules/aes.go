@@ -127,18 +127,27 @@ func (m *AES) Run(input, output channels.Channel, buffer_size, delay int) error 
 		var data []byte
 
 		if m.mode == "encrypt" {
+			size := len(buff)
+			sg1.Debug("AES encrypting %d bytes ...\n", size)
+			packet := channels.NewPacket(0, uint32(size), buff)
+			buff = packet.Raw()
+			sg1.Debug("Packet: %s\n", sg1.Hex(buff))
+
 			err, data = m.encrypt(buff, m.key)
 		} else if m.mode == "decrypt" {
+			sg1.Debug("AES decrypting %d bytes ...\n", len(buff))
 			err, data = m.decrypt(buff, m.key)
+			if err == nil {
+				if packet, err := channels.DecodePacket(data); err == nil {
+					sg1.Debug("AES decrypted packet of %d bytes.\n", packet.DataSize)
+					sg1.Debug("Packet data: %s\n", sg1.Hex(packet.Data))
+					data = packet.Data
+				}
+			}
 		} else {
 			err = fmt.Errorf("Unhandled AES mode '%s'.", m.mode)
 		}
 
-		if err != nil {
-			sg1.Error("%s\n", err)
-			return 0, nil, err
-		}
-
-		return len(data), data, nil
+		return len(data), data, err
 	})
 }

@@ -67,9 +67,7 @@ func DecodePacket(buffer []byte) (p *Packet, err error) {
 		data_buf = buffer[8:]
 	}
 
-	size = uint32(len(data_buf))
-
-	return NewPacket(seqn, size, data_buf), nil
+	return NewPacket(seqn, size, data_buf[:size]), nil
 }
 
 func (p *Packet) HeaderSize() int {
