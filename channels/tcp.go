@@ -56,6 +56,10 @@ func NewTCPChannel() *TCPChannel {
 	return s
 }
 
+func (c *TCPChannel) Copy() interface{} {
+	return NewTCPChannel()
+}
+
 func (c *TCPChannel) Name() string {
 	return "tcp"
 }

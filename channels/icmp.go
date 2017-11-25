@@ -60,6 +60,10 @@ func NewICMPChannel() *ICMPChannel {
 	}
 }
 
+func (c *ICMPChannel) Copy() interface{} {
+	return NewICMPChannel()
+}
+
 func (c *ICMPChannel) Name() string {
 	return "icmp"
 }

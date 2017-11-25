@@ -39,6 +39,10 @@ func NewConsoleChannel() *Console {
 	return &Console{}
 }
 
+func (c *Console) Copy() interface{} {
+	return NewConsoleChannel()
+}
+
 func (c *Console) Name() string {
 	return "console"
 }

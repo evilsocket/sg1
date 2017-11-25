@@ -82,6 +82,10 @@ func NewDNSChannel() *DNSChannel {
 	}
 }
 
+func (c *DNSChannel) Copy() interface{} {
+	return NewDNSChannel()
+}
+
 func (c *DNSChannel) Name() string {
 	return "dns"
 }

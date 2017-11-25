@@ -39,6 +39,7 @@ type Stats struct {
 }
 
 type Channel interface {
+	Copy() interface{}
 	Name() string
 	Description() string
 	Register() error

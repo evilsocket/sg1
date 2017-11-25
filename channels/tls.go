@@ -78,6 +78,10 @@ func NewTLSChannel() *TLSChannel {
 	return s
 }
 
+func (c *TLSChannel) Copy() interface{} {
+	return NewTLSChannel()
+}
+
 func (c *TLSChannel) Name() string {
 	return "tls"
 }

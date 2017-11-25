@@ -81,11 +81,12 @@ func Factory(channel_name string, direction Direction) (channel Channel, err err
 		channel_args = parts[1]
 	}
 
-	found := false
-	if channel, found = registered[channel_name]; found == false {
+	instance, found := registered[channel_name]
+	if found == false {
 		return nil, fmt.Errorf("No channel with name %s has been registered.", channel_name)
 	}
 
+	channel = instance.Copy().(Channel)
 	if err := channel.Setup(direction, channel_args); err != nil {
 		return nil, err
 	}

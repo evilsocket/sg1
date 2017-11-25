@@ -88,6 +88,10 @@ func NewPastebinChannel() *Pastebin {
 	}
 }
 
+func (c *Pastebin) Copy() interface{} {
+	return NewPastebinChannel()
+}
+
 func (c *Pastebin) Name() string {
 	return "pastebin"
 }
