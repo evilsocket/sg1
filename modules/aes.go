@@ -67,9 +67,33 @@ func (m *AES) Register() error {
 	return nil
 }
 
-func (m *AES) encrypt(plaintext []byte, keystring string) (error, []byte) {
+func (m *AES) getCipher(keystring string) (cipher.Block, error) {
 	key := []byte(keystring)
-	block, err := aes.NewCipher(key)
+	ksize := len(key)
+
+	for _, min_sz := range []int{16, 24, 32} {
+		if ksize < min_sz {
+			sg1.Warning("AES key size %d is less than %d, key will be padded with 0s.\n", ksize, min_sz)
+			ksize = min_sz
+			key = channels.PadBuffer(key, ksize, 0x00)
+			break
+		} else if ksize > 32 {
+			sg1.Warning("AES key size %d is greater than 32, key will be shortened.\n", ksize)
+			ksize = 32
+			key = key[0:ksize]
+			break
+		}
+
+		if ksize == min_sz {
+			break
+		}
+	}
+
+	return aes.NewCipher(key)
+}
+
+func (m *AES) encrypt(plaintext []byte, keystring string) (error, []byte) {
+	block, err := m.getCipher(keystring)
 	if err != nil {
 		return err, nil
 	}
@@ -93,8 +117,7 @@ func (m *AES) encrypt(plaintext []byte, keystring string) (error, []byte) {
 }
 
 func (m *AES) decrypt(ciphertext []byte, keystring string) (error, []byte) {
-	key := []byte(keystring)
-	block, err := aes.NewCipher(key)
+	block, err := m.getCipher(keystring)
 	if err != nil {
 		return err, nil
 	}
