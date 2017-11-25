@@ -102,7 +102,12 @@ Will read from input, encode in base64 and write to output.
 
 **aes** 
 
-Will read from input, encrypt or decrypt (depending on `--aes-mode` parameter) with `--aes-key` and write to output.
+Will read from input, encrypt or decrypt (depending on `--aes-mode` parameter, which is `encrypt` by default) with `--aes-key` and write to output.
+
+Examples:
+
+    -module aes --aes-key y0urp4ssw0rd
+    -module aes -aes-module decrypt --aes-key y0urp4ssw0rd
 
 **exec**
 
