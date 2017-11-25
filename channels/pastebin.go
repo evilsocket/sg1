@@ -97,8 +97,6 @@ func (c *Pastebin) Name() string {
 }
 
 func (c *Pastebin) Register() error {
-	flag.StringVar(&c.api_key, "pastebin-api-key", "", "API developer key for the pastebin channel.")
-	flag.StringVar(&c.user_key, "pastebin-user-key", "", "API user key for the pastebin channel ( https://pastebin.com/api#8 ).")
 	flag.BoolVar(&c.preserve, "pastebin-preserve", c.preserve, "Do not delete pastes after reading them.")
 	flag.IntVar(&c.poll_time, "pastebin-poll-time", c.poll_time, "Number of milliseconds to wait between one pastebin API request and another.")
 	return nil
