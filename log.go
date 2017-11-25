@@ -27,6 +27,10 @@ func Hex(buffer []byte) string {
 	return hex.EncodeToString(buffer)
 }
 
+func Bold(s string) string {
+	return BOLD + s + RESET
+}
+
 func Raw(format string, args ...interface{}) {
 	logLock.Lock()
 	defer logLock.Unlock()
