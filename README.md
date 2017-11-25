@@ -93,6 +93,9 @@ Simple file exfiltration over DNS:
 Quick and dirty AES encrypted chat over TCP:
 ![aes-tcp](https://pbs.twimg.com/media/DPHAlOXWAAA9kKv.jpg:large)
 
+Or over ICMP:
+![icmp](https://pbs.twimg.com/media/DPfJ--aWsAEng-y.jpg:large)
+
 Pastebin AES encrypted data tunnel with self deleting private pastes:
 ![pastebin](https://pbs.twimg.com/media/DPQl7zoXUAAIdQ9.jpg:large)
 
