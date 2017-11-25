@@ -118,7 +118,7 @@ func (c *Pastebin) Setup(direction Direction, args string) error {
 		return fmt.Errorf("Usage: pastebin:YOUR-API-DEV-KEY/YOUR-API-USER-KEY")
 	}
 
-	sg1.Debug("Setup pastebin channel: direction=%d api_key='%s' user_key='%s'\n", c.api_key, c.user_key)
+	sg1.Debug("Setup pastebin channel: direction=%d api_key='%s' user_key='%s'\n", direction, c.api_key, c.user_key)
 
 	return nil
 }
