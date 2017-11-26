@@ -175,7 +175,9 @@ If used as output, data will be chunked and sent to pastebin.com as private past
 Examples:
 
     -in pastebin:YOUR-API-KEY/YOUR-USER-KEY
+    -in pastebin:YOUR-API-KEY/YOUR-USER-KEY#some-stream-name
     -out pastebin:YOUR-API-KEY/YOUR-USER-KEY
+    -out pastebin:YOUR-API-KEY/YOUR-USER-KEY#some-stream-name
 
 [This](https://pastebin.com/api#8 ) is how you can retrieve your user key given your api key.
 
@@ -217,6 +219,9 @@ With bouncing to another host:
 
 Some `stdin` -> `dns packets` -> `pastebin temporary paste` -> `stdout` hops:
 ![hops](https://pbs.twimg.com/media/DPQ58EhW0AA7CFz.jpg:large)
+
+Covert backdoor channel using astebin streams and AES encryption:
+![streams](https://pbs.twimg.com/media/DPmGuXqWsAEEi48.jpg:large)
 
 ## License
 
