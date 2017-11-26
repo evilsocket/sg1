@@ -37,13 +37,18 @@ import (
 	"time"
 )
 
-var argsParser = regexp.MustCompile("^([a-fA-F0-9]{32})/([a-fA-F0-9]{32})$")
+const (
+	DefaultStreamName = "PBSTREAM"
+)
+
+var argsParser = regexp.MustCompile("^([a-fA-F0-9]{32})/([a-fA-F0-9]{32})(#.+)?$")
 
 type Pastebin struct {
 	api       *PastebinAPI
 	is_client bool
 	preserve  bool
 	seqn      uint32
+	stream    string
 	poll_time int
 	chunks    chan []byte
 	stats     Stats
@@ -53,6 +58,7 @@ func NewPastebinChannel() *Pastebin {
 	return &Pastebin{
 		api:       nil,
 		is_client: true,
+		stream:    DefaultStreamName,
 		preserve:  false,
 		poll_time: 1000,
 		chunks:    make(chan []byte),
@@ -84,13 +90,16 @@ func (c *Pastebin) Setup(direction Direction, args string) error {
 		c.is_client = true
 	}
 
-	if m := argsParser.FindStringSubmatch(args); len(m) == 3 {
+	if m := argsParser.FindStringSubmatch(args); len(m) == 4 {
 		c.api = NewPastebinAPI(m[1], m[2])
+		if len(m[3]) > 1 {
+			c.stream = m[3][1:]
+		}
 	} else {
-		return fmt.Errorf("Usage: pastebin:YOUR-API-DEV-KEY/YOUR-API-USER-KEY")
+		return fmt.Errorf("Usage: pastebin:YOUR-API-DEV-KEY/YOUR-API-USER-KEY(#stream_name)?")
 	}
 
-	sg1.Debug("Setup pastebin channel: direction=%d api_key='%s' user_key='%s'\n", direction, c.api.ApiKey, c.api.UserKey)
+	sg1.Debug("Setup pastebin channel: direction=%d api_key='%s' user_key='%s' stream='%s'\n", direction, c.api.ApiKey, c.api.UserKey, c.stream)
 
 	return nil
 }
@@ -117,6 +126,20 @@ func (c *Pastebin) Start() error {
 						sg1.Error("Error while requesting pastes: %s.\n", err)
 						continue
 					}
+
+					sg1.Debug("Filtering %d pastes by stream '%s'.\n", len(pastes), c.stream)
+
+					// filter by stream name
+					filtered := make([]XmlPaste, 0)
+					for _, paste := range pastes {
+						if strings.Contains(paste.title, c.stream) == true {
+							filtered = append(filtered, paste)
+						}
+					}
+
+					pastes = filtered
+
+					sg1.Debug("Filtered pastes are now %d.\n", len(pastes))
 				} else {
 					sg1.Debug("Got %d pastes to process.\n", len(pastes))
 				}
@@ -206,7 +229,7 @@ func (c *Pastebin) Write(b []byte) (n int, err error) {
 
 	paste := Paste{
 		Text:       packet.Hex(),
-		Name:       fmt.Sprintf("SG1 0x%x", sg1.Time()),
+		Name:       fmt.Sprintf("SG1 %s 0x%x", c.stream, sg1.Time()),
 		Privacy:    Private,
 		ExpireDate: Hour,
 	}

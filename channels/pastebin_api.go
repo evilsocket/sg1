@@ -110,7 +110,7 @@ func (api *PastebinAPI) GetPaste(key string) (body string, err error) {
 
 func (api *PastebinAPI) parseXmlPastes(body string) []XmlPaste {
 	keyParser := regexp.MustCompile("^<paste_key>(.+)</paste_key>$")
-	titleParser := regexp.MustCompile("^<paste_title>SG1 (0x[a-fA-F0-9]+)</paste_title>$")
+	titleParser := regexp.MustCompile("^<paste_title>SG1 (.+) (0x[a-fA-F0-9]+)</paste_title>$")
 	pastes := make([]XmlPaste, 0)
 	lines := strings.Split(body, "\n")
 	paste := XmlPaste{}
@@ -126,8 +126,8 @@ func (api *PastebinAPI) parseXmlPastes(body string) []XmlPaste {
 			pastes = append(pastes, paste)
 		} else if m := keyParser.FindStringSubmatch(line); len(m) == 2 {
 			paste.key = m[1]
-		} else if m := titleParser.FindStringSubmatch(line); len(m) == 2 {
-			paste.title = m[1]
+		} else if m := titleParser.FindStringSubmatch(line); len(m) == 3 {
+			paste.title = m[1] + " " + m[2]
 		}
 	}
 
