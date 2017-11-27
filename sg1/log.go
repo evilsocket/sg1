@@ -24,50 +24,60 @@
 * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 * POSSIBILITY OF SUCH DAMAGE.
  */
-package channels
+package sg1
 
 import (
-	"time"
+	"encoding/hex"
+	"fmt"
+	"os"
+	"sync"
 )
 
-type DataHandler func(buff []byte) (int, []byte, error)
+// https://misc.flogisoft.com/bash/tip_colors_and_formatting
+const (
+	BOLD = "\033[1m"
+	DIM  = "\033[2m"
 
-func ReadLoop(input, output Channel, buffer_size, delay int, dataHandler DataHandler) error {
-	var n int
-	var err error
+	RED    = "\033[31m"
+	GREEN  = "\033[32m"
+	YELLOW = "\033[33m"
 
-	for {
-		buff := make([]byte, buffer_size)
-		// read buffer_size bytes from the input channel
-		if n, err = input.Read(buff); err != nil {
-			if err.Error() == "EOF" {
-				break
-			} else {
-				return err
-			}
-		}
+	RESET = "\033[0m"
+)
 
-		// do we have data?
-		if len(buff) > 0 && n > 0 {
-			// if a handler was given, process those bytes with it
-			if dataHandler != nil {
-				n, buff, err = dataHandler(buff[:n])
-				if err != nil {
-					return err
-				}
-			}
+var (
+	logLock = &sync.Mutex{}
+)
 
-			// write bytes to the output channel
-			if _, err = output.Write(buff[:n]); err != nil {
-				return err
-			}
+func Hex(buffer []byte) string {
+	return hex.EncodeToString(buffer)
+}
 
-			// throttle if delay was specified
-			if delay > 0 {
-				time.Sleep(time.Duration(delay) * time.Millisecond)
-			}
-		}
+func Bold(s string) string {
+	return BOLD + s + RESET
+}
+
+func Raw(format string, args ...interface{}) {
+	logLock.Lock()
+	defer logLock.Unlock()
+
+	fmt.Fprintf(os.Stderr, format, args...)
+}
+
+func Log(format string, args ...interface{}) {
+	Raw("[INF] "+format, args...)
+}
+
+func Warning(format string, args ...interface{}) {
+	Raw(YELLOW+"[WAR] "+format+RESET, args...)
+}
+
+func Error(format string, args ...interface{}) {
+	Raw(RED+"[ERR] "+format+RESET, args...)
+}
+
+func Debug(format string, args ...interface{}) {
+	if DebugMessages {
+		Raw(DIM+"[DBG] "+format+RESET, args...)
 	}
-
-	return nil
 }

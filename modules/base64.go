@@ -29,8 +29,8 @@ package modules
 import (
 	b64 "encoding/base64"
 	"flag"
-	"github.com/evilsocket/sg1"
 	"github.com/evilsocket/sg1/channels"
+	"github.com/evilsocket/sg1/sg1"
 )
 
 type Base64 struct {

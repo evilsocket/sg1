@@ -34,9 +34,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/evilsocket/sg1"
 	"github.com/evilsocket/sg1/channels"
 	"github.com/evilsocket/sg1/modules"
+	"github.com/evilsocket/sg1/sg1"
 )
 
 func init() {
@@ -90,6 +90,48 @@ func onError(err error) {
 	os.Exit(1)
 }
 
+type DataHandler func(buff []byte) (int, []byte, error)
+
+func ReadLoop(input, output channels.Channel, buffer_size, delay int, dataHandler DataHandler) error {
+	var n int
+	var err error
+
+	for {
+		buff := make([]byte, buffer_size)
+		// read buffer_size bytes from the input channel
+		if n, err = input.Read(buff); err != nil {
+			if err.Error() == "EOF" {
+				break
+			} else {
+				return err
+			}
+		}
+
+		// do we have data?
+		if len(buff) > 0 && n > 0 {
+			// if a handler was given, process those bytes with it
+			if dataHandler != nil {
+				n, buff, err = dataHandler(buff[:n])
+				if err != nil {
+					return err
+				}
+			}
+
+			// write bytes to the output channel
+			if _, err = output.Write(buff[:n]); err != nil {
+				return err
+			}
+
+			// throttle if delay was specified
+			if delay > 0 {
+				time.Sleep(time.Duration(delay) * time.Millisecond)
+			}
+		}
+	}
+
+	return nil
+}
+
 func main() {
 	sg1.Raw(sg1.Bold("%s v%s ( built from %s on %s for %s %s )\n\n"), sg1.APP_NAME, sg1.APP_VERSION, sg1.APP_BUILD_BRANCH, sg1.APP_BUILD_DATE, runtime.GOOS, runtime.GOARCH)
 
@@ -134,7 +176,7 @@ func main() {
 
 	start := time.Now()
 
-	err = channels.ReadLoop(input, output, sg1.BufferSize, sg1.Delay, func(buff []byte) (int, []byte, error) {
+	err = ReadLoop(input, output, sg1.BufferSize, sg1.Delay, func(buff []byte) (int, []byte, error) {
 		var run_error error
 		var ret []byte
 

@@ -32,8 +32,8 @@ import (
 	"crypto/rand"
 	"flag"
 	"fmt"
-	"github.com/evilsocket/sg1"
 	"github.com/evilsocket/sg1/channels"
+	"github.com/evilsocket/sg1/sg1"
 	"io"
 )
 
@@ -75,7 +75,7 @@ func (m *AES) getCipher(keystring string) (cipher.Block, error) {
 		if ksize < min_sz {
 			sg1.Warning("AES key size %d is less than %d, key will be padded with 0s.\n", ksize, min_sz)
 			ksize = min_sz
-			key = channels.PadBuffer(key, ksize, 0x00)
+			key = sg1.PadBuffer(key, ksize, 0x00)
 			break
 		} else if ksize > 32 {
 			sg1.Warning("AES key size %d is greater than 32, key will be shortened.\n", ksize)
@@ -151,7 +151,7 @@ func (m *AES) Run(buff []byte) (int, []byte, error) {
 	if m.mode == "encrypt" {
 		size := len(buff)
 		sg1.Debug("AES encrypting %d bytes ...\n", size)
-		packet := channels.NewPacket(0, uint32(size), buff)
+		packet := sg1.NewPacket(0, uint32(size), buff)
 		buff = packet.Raw()
 		sg1.Debug("Packet: %s\n", sg1.Hex(buff))
 
@@ -160,7 +160,7 @@ func (m *AES) Run(buff []byte) (int, []byte, error) {
 		sg1.Debug("AES decrypting %d bytes ...\n", len(buff))
 		err, data = m.decrypt(buff, m.key)
 		if err == nil {
-			if packet, err := channels.DecodePacket(data); err == nil {
+			if packet, err := sg1.DecodePacket(data); err == nil {
 				sg1.Debug("AES decrypted packet of %d bytes.\n", packet.DataSize)
 				sg1.Debug("Packet data: %s\n", sg1.Hex(packet.Data))
 				data = packet.Data

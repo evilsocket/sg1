@@ -3,16 +3,18 @@ BUILD_DATE=`date +%Y-%m-%d\ %H:%M`
 BUILD_COMMIT=$(shell git rev-parse HEAD)
 BUILD_BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 BUILD_FOLDER=build
-BUILD_FILE=build.go
+BUILD_FILE=sg1/build.go
 
-all: build
+all: sg1
 	@echo "@ Done"
 	@echo -n "\n"
 
-build: build_file
-	@echo "@ Building ..."
+sg1: build_folder
+	@echo "@ Building $(TARGET) ..."
+	@go build $(FLAGS) -o $(BUILD_FOLDER)/$(TARGET) main.go
+
+build_folder:
 	@mkdir -p $(BUILD_FOLDER)
-	@go build $(FLAGS) -o $(BUILD_FOLDER)/$(TARGET) cmd/$(TARGET)/*.go
 
 build_file: 
 	@rm -f $(BUILD_FILE)

@@ -24,16 +24,15 @@
 * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 * POSSIBILITY OF SUCH DAMAGE.
  */
-package channels
+package sg1
 
 import (
-	"github.com/evilsocket/sg1"
 	"sort"
 	"sync"
 	"sync/atomic"
 )
 
-type Sequencer struct {
+type PacketSequencer struct {
 	seqn  uint32
 	in    chan *Packet
 	mutex *sync.Mutex
@@ -41,8 +40,8 @@ type Sequencer struct {
 	queue []*Packet
 }
 
-func NewSequencer() *Sequencer {
-	s := &Sequencer{
+func NewPacketSequencer() *PacketSequencer {
+	s := &PacketSequencer{
 		seqn:  0,
 		in:    make(chan *Packet),
 		mutex: &sync.Mutex{},
@@ -56,15 +55,15 @@ func NewSequencer() *Sequencer {
 	return s
 }
 
-func (s *Sequencer) add(p *Packet) {
+func (s *PacketSequencer) add(p *Packet) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	sg1.Debug("Adding packet with sequence number %d to queue.\n", p.SeqNumber)
+	Debug("Adding packet with sequence number %d to queue.\n", p.SeqNumber)
 
 	s.queue = append(s.queue, p)
 
-	sg1.Debug("Sorting %d packets in queue.\n", len(s.queue))
+	Debug("Sorting %d packets in queue.\n", len(s.queue))
 
 	// sort by sequence number
 	sort.Slice(s.queue, func(i, j int) bool {
@@ -74,8 +73,8 @@ func (s *Sequencer) add(p *Packet) {
 	s.cond.Signal()
 }
 
-func (s *Sequencer) worker() {
-	sg1.Debug("Packet sequencer started.\n")
+func (s *PacketSequencer) worker() {
+	Debug("Packet sequencer started.\n")
 
 	for {
 		packet := <-s.in
@@ -83,32 +82,32 @@ func (s *Sequencer) worker() {
 	}
 }
 
-func (s *Sequencer) Packet(data []byte) *Packet {
+func (s *PacketSequencer) Packet(data []byte) *Packet {
 	size := len(data)
 	packet := NewPacket(s.seqn, uint32(size), data)
-	sg1.Debug("Sequencer built a packet with seqn=%d\n", s.seqn)
+	Debug("PacketSequencer built a packet with seqn=%d\n", s.seqn)
 	atomic.AddUint32(&s.seqn, 1)
 	return packet
 }
 
-func (s *Sequencer) Add(packet *Packet) {
+func (s *PacketSequencer) Add(packet *Packet) {
 	s.in <- packet
 }
 
-func (s *Sequencer) HasPacket() bool {
+func (s *PacketSequencer) HasPacket() bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	return len(s.queue) > 0
 }
 
-func (s *Sequencer) Wait() {
+func (s *PacketSequencer) Wait() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.cond.Wait()
 }
 
-func (s *Sequencer) WaitForSeqn(n uint32) {
-	sg1.Debug("Waiting for packet with sequence number %d.\n", n)
+func (s *PacketSequencer) WaitForSeqn(n uint32) {
+	Debug("Waiting for packet with sequence number %d.\n", n)
 
 	for {
 		if s.HasPacket() == false {
@@ -125,7 +124,7 @@ func (s *Sequencer) WaitForSeqn(n uint32) {
 	}
 }
 
-func (s *Sequencer) Get() *Packet {
+func (s *PacketSequencer) Get() *Packet {
 	s.WaitForSeqn(s.seqn)
 	atomic.AddUint32(&s.seqn, 1)
 
@@ -135,7 +134,7 @@ func (s *Sequencer) Get() *Packet {
 	packet := s.queue[0]
 	s.queue = s.queue[1:]
 
-	sg1.Debug("Returning packet with sequence number %d.\n", packet.SeqNumber)
+	Debug("Returning packet with sequence number %d.\n", packet.SeqNumber)
 
 	return packet
 }

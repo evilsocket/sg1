@@ -28,7 +28,7 @@ package channels
 
 import (
 	"fmt"
-	"github.com/evilsocket/sg1"
+	"github.com/evilsocket/sg1/sg1"
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv4"
 	"net"
@@ -44,7 +44,7 @@ const (
 type ICMPChannel struct {
 	is_client bool
 	address   string
-	seq       *Sequencer
+	seq       *sg1.PacketSequencer
 	conn      *icmp.PacketConn
 	stats     Stats
 }
@@ -53,7 +53,7 @@ func NewICMPChannel() *ICMPChannel {
 	return &ICMPChannel{
 		is_client: true,
 		address:   "0.0.0.0",
-		seq:       NewSequencer(),
+		seq:       sg1.NewPacketSequencer(),
 		conn:      nil,
 	}
 }
@@ -125,7 +125,7 @@ func (c *ICMPChannel) Start() (err error) {
 				if msg.Type == ipv4.ICMPTypeEcho {
 					sg1.Debug("Got ICMP echo.\n")
 					echo := msg.Body.(*icmp.Echo)
-					if packet, err := DecodePacket(echo.Data); err == nil {
+					if packet, err := sg1.DecodePacket(echo.Data); err == nil {
 						sg1.Debug("Decoded packet of %d bytes from ICMP echo payload (seqn=%d).\n", packet.DataSize, packet.SeqNumber)
 
 						c.stats.TotalRead += int(packet.DataSize)
@@ -173,7 +173,7 @@ func (c *ICMPChannel) Read(b []byte) (n int, err error) {
 	return len(data), nil
 }
 
-func (c *ICMPChannel) sendPacket(packet *Packet) error {
+func (c *ICMPChannel) sendPacket(packet *sg1.Packet) error {
 	sg1.Debug("Encapsulating %d bytes of packet in ICMP echo payload for address %s.\n", packet.DataSize, c.address)
 
 	data := packet.Raw()
@@ -207,7 +207,7 @@ func (c *ICMPChannel) Write(b []byte) (n int, err error) {
 	sg1.Debug("Writing %d bytes to ICMP channel as chunks of %d bytes.\n", len(b), ICMPChunkSize)
 
 	wrote := 0
-	for _, chunk := range BufferToChunks(b, ICMPChunkSize) {
+	for _, chunk := range sg1.BufferToChunks(b, ICMPChunkSize) {
 		size := len(chunk)
 		packet := c.seq.Packet(chunk)
 

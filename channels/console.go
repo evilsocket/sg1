@@ -27,7 +27,7 @@
 package channels
 
 import (
-	"github.com/evilsocket/sg1"
+	"github.com/evilsocket/sg1/sg1"
 	"os"
 )
 

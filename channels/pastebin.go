@@ -30,7 +30,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"github.com/evilsocket/sg1"
+	"github.com/evilsocket/sg1/sg1"
 	"regexp"
 	"sort"
 	"strings"
@@ -48,7 +48,7 @@ type Pastebin struct {
 	is_client bool
 	preserve  bool
 	stream    string
-	seq       *Sequencer
+	seq       *sg1.PacketSequencer
 	poll_time int
 	stats     Stats
 }
@@ -60,7 +60,7 @@ func NewPastebinChannel() *Pastebin {
 		stream:    DefaultStreamName,
 		preserve:  false,
 		poll_time: 1000,
-		seq:       NewSequencer(),
+		seq:       sg1.NewPacketSequencer(),
 	}
 }
 
@@ -173,7 +173,7 @@ func (c *Pastebin) Start() error {
 					}
 
 					sg1.Debug("Decoding packet from %d bytes.\n", len(chunk))
-					if packet, err := DecodePacket(chunk); err == nil {
+					if packet, err := sg1.DecodePacket(chunk); err == nil {
 						sg1.Debug("Decoded packet of %d bytes.\n", packet.DataSize)
 
 						c.stats.TotalRead += int(packet.DataSize)

@@ -29,7 +29,7 @@ package channels
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/evilsocket/sg1"
+	"github.com/evilsocket/sg1/sg1"
 	"github.com/miekg/dns"
 	"net"
 	"regexp"
@@ -48,7 +48,7 @@ type DNSChannel struct {
 	domain    string
 	address   string
 	port      int
-	seq       *Sequencer
+	seq       *sg1.PacketSequencer
 	server    dns.Server
 	client    *dns.Client
 	stats     Stats
@@ -62,7 +62,7 @@ func NewDNSChannel() *DNSChannel {
 		port:      53,
 		server:    dns.Server{Addr: ":53", Net: "udp"},
 		client:    nil,
-		seq:       NewSequencer(),
+		seq:       sg1.NewPacketSequencer(),
 	}
 }
 
@@ -112,7 +112,7 @@ func (c *DNSChannel) setupServer(args string) error {
 		sg1.Debug("Got DNS message.\n")
 		if chunk, domain, err := parseQuestion(r); err == nil {
 			if c.domain == "" || c.domain == domain {
-				if packet, err := DecodePacket(chunk); err == nil {
+				if packet, err := sg1.DecodePacket(chunk); err == nil {
 					sg1.Debug("Decoded packet of %d bytes.\n", packet.DataSize)
 
 					c.stats.TotalRead += int(packet.DataSize)
@@ -252,7 +252,7 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 	sg1.Debug("Sending %d bytes in chunks of %d bytes...\n", len(b), DNSChunkSize)
 
 	wrote := 0
-	for _, chunk := range BufferToChunks(b, DNSChunkSize) {
+	for _, chunk := range sg1.BufferToChunks(b, DNSChunkSize) {
 		size := len(chunk)
 		packet := c.seq.Packet(chunk)
 		fqdn := fmt.Sprintf("%s.%s", packet.Hex(), c.domain)

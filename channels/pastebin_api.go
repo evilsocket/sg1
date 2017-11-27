@@ -29,7 +29,7 @@ package channels
 import (
 	"bytes"
 	"fmt"
-	"github.com/evilsocket/sg1"
+	"github.com/evilsocket/sg1/sg1"
 	"net/http"
 	"net/url"
 	"regexp"

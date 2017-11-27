@@ -28,7 +28,7 @@ package channels
 
 import (
 	"fmt"
-	"github.com/evilsocket/sg1"
+	"github.com/evilsocket/sg1/sg1"
 	"net"
 )
 
@@ -41,7 +41,7 @@ type UDPChannel struct {
 	is_client bool
 	address   *net.UDPAddr
 	conn      *net.UDPConn
-	seq       *Sequencer
+	seq       *sg1.PacketSequencer
 	stats     Stats
 }
 
@@ -50,7 +50,7 @@ func NewUDPChannel() *UDPChannel {
 		is_client: true,
 		address:   nil,
 		conn:      nil,
-		seq:       NewSequencer(),
+		seq:       sg1.NewPacketSequencer(),
 	}
 }
 
@@ -117,7 +117,7 @@ func (c *UDPChannel) Start() (err error) {
 
 				sg1.Debug("Read %d bytes of UDP packet from %s .\n", n, peer)
 
-				if packet, err := DecodePacket(buffer[:n]); err == nil {
+				if packet, err := sg1.DecodePacket(buffer[:n]); err == nil {
 					sg1.Debug("Decoded packet of %d bytes from UDP echo payload.\n", packet.DataSize)
 
 					c.stats.TotalRead += int(packet.DataSize)
@@ -162,7 +162,7 @@ func (c *UDPChannel) Read(b []byte) (n int, err error) {
 	return len(data), nil
 }
 
-func (c *UDPChannel) sendPacket(packet *Packet) error {
+func (c *UDPChannel) sendPacket(packet *sg1.Packet) error {
 	sg1.Debug("Encapsulating %d bytes of packet in UDP echo payload for address %s.\n", packet.DataSize, c.address)
 
 	data := packet.Raw()
@@ -181,7 +181,7 @@ func (c *UDPChannel) Write(b []byte) (n int, err error) {
 	sg1.Debug("Writing %d bytes to UDP channel as chunks of %d bytes.\n", len(b), UDPChunkSize)
 
 	wrote := 0
-	for _, chunk := range BufferToChunks(b, UDPChunkSize) {
+	for _, chunk := range sg1.BufferToChunks(b, UDPChunkSize) {
 		size := len(chunk)
 		packet := c.seq.Packet(chunk)
 

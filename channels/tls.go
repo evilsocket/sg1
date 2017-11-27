@@ -36,7 +36,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"flag"
-	"github.com/evilsocket/sg1"
+	"github.com/evilsocket/sg1/sg1"
 	"math/big"
 	"net"
 	"os"
