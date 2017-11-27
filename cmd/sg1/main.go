@@ -134,7 +134,7 @@ func main() {
 
 	start := time.Now()
 
-	err = modules.ReadLoop(input, output, sg1.BufferSize, sg1.Delay, func(buff []byte) (int, []byte, error) {
+	err = channels.ReadLoop(input, output, sg1.BufferSize, sg1.Delay, func(buff []byte) (int, []byte, error) {
 		var run_error error
 		var ret []byte
 

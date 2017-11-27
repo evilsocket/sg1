@@ -24,13 +24,50 @@
 * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 * POSSIBILITY OF SUCH DAMAGE.
  */
-package modules
+package channels
 
-type Module interface {
-	Name() string
-	Description() string
+import (
+	"time"
+)
 
-	Register() error
+type DataHandler func(buff []byte) (int, []byte, error)
 
-	Run(buff []byte) (int, []byte, error)
+func ReadLoop(input, output Channel, buffer_size, delay int, dataHandler DataHandler) error {
+	var n int
+	var err error
+
+	for {
+		buff := make([]byte, buffer_size)
+		// read buffer_size bytes from the input channel
+		if n, err = input.Read(buff); err != nil {
+			if err.Error() == "EOF" {
+				break
+			} else {
+				return err
+			}
+		}
+
+		// do we have data?
+		if len(buff) > 0 && n > 0 {
+			// if a handler was given, process those bytes with it
+			if dataHandler != nil {
+				n, buff, err = dataHandler(buff[:n])
+				if err != nil {
+					return err
+				}
+			}
+
+			// write bytes to the output channel
+			if _, err = output.Write(buff[:n]); err != nil {
+				return err
+			}
+
+			// throttle if delay was specified
+			if delay > 0 {
+				time.Sleep(time.Duration(delay) * time.Millisecond)
+			}
+		}
+	}
+
+	return nil
 }
