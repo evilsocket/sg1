@@ -40,19 +40,17 @@ const (
 type UDPChannel struct {
 	is_client bool
 	address   *net.UDPAddr
-	seqn      uint32
 	conn      *net.UDPConn
-	chunks    chan []byte
+	seq       *Sequencer
 	stats     Stats
 }
 
 func NewUDPChannel() *UDPChannel {
 	return &UDPChannel{
 		is_client: true,
-		seqn:      0,
 		address:   nil,
 		conn:      nil,
-		chunks:    make(chan []byte),
+		seq:       NewSequencer(),
 	}
 }
 
@@ -123,7 +121,7 @@ func (c *UDPChannel) Start() (err error) {
 					sg1.Debug("Decoded packet of %d bytes from UDP echo payload.\n", packet.DataSize)
 
 					c.stats.TotalRead += int(packet.DataSize)
-					c.chunks <- packet.Data
+					c.seq.Add(packet)
 				} else {
 					sg1.Error("Error while decoding UDP payload: %s.\n", err)
 				}
@@ -153,7 +151,8 @@ func (c *UDPChannel) Read(b []byte) (n int, err error) {
 		return 0, fmt.Errorf("icmp client can't be used for reading.")
 	}
 
-	data := <-c.chunks
+	packet := c.seq.Get()
+	data := packet.Data
 	for i, c := range data {
 		b[i] = c
 	}
@@ -184,7 +183,7 @@ func (c *UDPChannel) Write(b []byte) (n int, err error) {
 	wrote := 0
 	for _, chunk := range BufferToChunks(b, UDPChunkSize) {
 		size := len(chunk)
-		packet := NewPacket(c.seqn, uint32(size), chunk)
+		packet := c.seq.Packet(chunk)
 
 		sg1.Debug("Sending %d bytes of encoded packet.\n", packet.DataSize)
 
@@ -195,8 +194,6 @@ func (c *UDPChannel) Write(b []byte) (n int, err error) {
 			wrote += size
 			c.stats.TotalWrote += size
 		}
-
-		c.seqn++
 	}
 
 	sg1.Debug("Wrote %d bytes to UDP channel.\n", wrote)

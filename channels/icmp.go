@@ -44,9 +44,8 @@ const (
 type ICMPChannel struct {
 	is_client bool
 	address   string
-	seqn      uint32
+	seq       *Sequencer
 	conn      *icmp.PacketConn
-	chunks    chan []byte
 	stats     Stats
 }
 
@@ -54,9 +53,8 @@ func NewICMPChannel() *ICMPChannel {
 	return &ICMPChannel{
 		is_client: true,
 		address:   "0.0.0.0",
-		seqn:      0,
+		seq:       NewSequencer(),
 		conn:      nil,
-		chunks:    make(chan []byte),
 	}
 }
 
@@ -128,10 +126,10 @@ func (c *ICMPChannel) Start() (err error) {
 					sg1.Debug("Got ICMP echo.\n")
 					echo := msg.Body.(*icmp.Echo)
 					if packet, err := DecodePacket(echo.Data); err == nil {
-						sg1.Debug("Decoded packet of %d bytes from ICMP echo payload.\n", packet.DataSize)
+						sg1.Debug("Decoded packet of %d bytes from ICMP echo payload (seqn=%d).\n", packet.DataSize, packet.SeqNumber)
 
 						c.stats.TotalRead += int(packet.DataSize)
-						c.chunks <- packet.Data
+						c.seq.Add(packet)
 					} else {
 						sg1.Error("Error while decoding ICMP payload: %s.\n", err)
 					}
@@ -164,7 +162,8 @@ func (c *ICMPChannel) Read(b []byte) (n int, err error) {
 		return 0, fmt.Errorf("icmp client can't be used for reading.")
 	}
 
-	data := <-c.chunks
+	packet := c.seq.Get()
+	data := packet.Data
 	for i, c := range data {
 		b[i] = c
 	}
@@ -178,11 +177,12 @@ func (c *ICMPChannel) sendPacket(packet *Packet) error {
 	sg1.Debug("Encapsulating %d bytes of packet in ICMP echo payload for address %s.\n", packet.DataSize, c.address)
 
 	data := packet.Raw()
+	sg1.Debug("HEX: %s\n", sg1.Hex(data))
 	msg := icmp.Message{
 		Type: ipv4.ICMPTypeEcho,
 		Code: 0,
 		Body: &icmp.Echo{
-			ID: os.Getpid() & 0xffff, Seq: int(c.seqn),
+			ID: os.Getpid() & 0xffff, Seq: int(packet.SeqNumber),
 			Data: data,
 		},
 	}
@@ -209,9 +209,9 @@ func (c *ICMPChannel) Write(b []byte) (n int, err error) {
 	wrote := 0
 	for _, chunk := range BufferToChunks(b, ICMPChunkSize) {
 		size := len(chunk)
-		packet := NewPacket(c.seqn, uint32(size), chunk)
+		packet := c.seq.Packet(chunk)
 
-		sg1.Debug("Sending %d bytes of encoded packet.\n", packet.DataSize)
+		sg1.Debug("Sending %d bytes of encoded packet (seqn=%d).\n", packet.DataSize, packet.SeqNumber)
 
 		if err := c.sendPacket(packet); err != nil {
 			sg1.Error("Error while sending ICMP packet: %s\n", err)
@@ -220,8 +220,6 @@ func (c *ICMPChannel) Write(b []byte) (n int, err error) {
 			wrote += size
 			c.stats.TotalWrote += size
 		}
-
-		c.seqn++
 	}
 
 	sg1.Debug("Wrote %d bytes to ICMP channel.\n", wrote)

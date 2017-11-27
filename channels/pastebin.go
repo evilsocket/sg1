@@ -47,10 +47,9 @@ type Pastebin struct {
 	api       *PastebinAPI
 	is_client bool
 	preserve  bool
-	seqn      uint32
 	stream    string
+	seq       *Sequencer
 	poll_time int
-	chunks    chan []byte
 	stats     Stats
 }
 
@@ -61,7 +60,7 @@ func NewPastebinChannel() *Pastebin {
 		stream:    DefaultStreamName,
 		preserve:  false,
 		poll_time: 1000,
-		chunks:    make(chan []byte),
+		seq:       NewSequencer(),
 	}
 }
 
@@ -178,7 +177,7 @@ func (c *Pastebin) Start() error {
 						sg1.Debug("Decoded packet of %d bytes.\n", packet.DataSize)
 
 						c.stats.TotalRead += int(packet.DataSize)
-						c.chunks <- packet.Data
+						c.seq.Add(packet)
 					} else {
 						sg1.Error("Error while decoding body: %s\n", err)
 					}
@@ -212,12 +211,12 @@ func (c *Pastebin) HasWriter() bool {
 }
 
 func (c *Pastebin) Read(b []byte) (n int, err error) {
-	data := <-c.chunks
+	packet := c.seq.Get()
+	data := packet.Data
+	size := len(data)
 	for i, c := range data {
 		b[i] = c
 	}
-	size := len(data)
-	c.stats.TotalRead += size
 
 	sg1.Debug("Read %d bytes from pastebin channel.\n", size)
 
@@ -225,8 +224,8 @@ func (c *Pastebin) Read(b []byte) (n int, err error) {
 }
 
 func (c *Pastebin) Write(b []byte) (n int, err error) {
-	packet := NewPacket(c.seqn, uint32(len(b)), b)
-
+	packet := c.seq.Packet(b)
+	size := len(b)
 	paste := Paste{
 		Text:       packet.Hex(),
 		Name:       fmt.Sprintf("SG1 %s 0x%x", c.stream, sg1.Time()),
@@ -242,12 +241,9 @@ func (c *Pastebin) Write(b []byte) (n int, err error) {
 	} else if strings.Contains(resp, "://") {
 		sg1.Raw("\n%s\n", resp)
 
-		size := len(b)
-
-		c.seqn++
 		c.stats.TotalWrote += size
-
 		sg1.Debug("Wrote %d bytes to pastebin channel.\n", size)
+
 		return n, nil
 	} else {
 		return 0, fmt.Errorf("Could not send paste: %s", resp)

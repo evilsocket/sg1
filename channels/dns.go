@@ -43,23 +43,14 @@ var (
 	DNSQuestionParser    = regexp.MustCompile("^([a-fA-F0-9]+)\\.(.+)\\.$")
 )
 
-type DNSClient struct {
-	client *dns.Client
-	seqn   uint32
-}
-
-type DNSServer struct {
-	server dns.Server
-	chunks chan []byte
-}
-
 type DNSChannel struct {
 	is_client bool
 	domain    string
 	address   string
 	port      int
-	server    DNSServer
-	client    DNSClient
+	seq       *Sequencer
+	server    dns.Server
+	client    *dns.Client
 	stats     Stats
 }
 
@@ -69,16 +60,9 @@ func NewDNSChannel() *DNSChannel {
 		domain:    "google.com",
 		address:   "",
 		port:      53,
-
-		server: DNSServer{
-			server: dns.Server{Addr: ":53", Net: "udp"},
-			chunks: make(chan []byte),
-		},
-
-		client: DNSClient{
-			client: nil,
-			seqn:   0,
-		},
+		server:    dns.Server{Addr: ":53", Net: "udp"},
+		client:    nil,
+		seq:       NewSequencer(),
 	}
 }
 
@@ -121,7 +105,7 @@ func (c *DNSChannel) setupServer(args string) error {
 	c.is_client = false
 
 	if c.address != "" {
-		c.server.server.Addr = fmt.Sprintf("%s:%d", c.address, c.port)
+		c.server.Addr = fmt.Sprintf("%s:%d", c.address, c.port)
 	}
 
 	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
@@ -132,7 +116,7 @@ func (c *DNSChannel) setupServer(args string) error {
 					sg1.Debug("Decoded packet of %d bytes.\n", packet.DataSize)
 
 					c.stats.TotalRead += int(packet.DataSize)
-					c.server.chunks <- packet.Data
+					c.seq.Add(packet)
 
 					m := new(dns.Msg)
 					m.SetReply(r)
@@ -154,9 +138,9 @@ func (c *DNSChannel) setupServer(args string) error {
 func (c *DNSChannel) setupClient(args string) error {
 	c.is_client = true
 	if c.address != "" {
-		c.client.client = new(dns.Client)
+		c.client = new(dns.Client)
 	} else {
-		c.client.client = nil
+		c.client = nil
 	}
 
 	return nil
@@ -194,7 +178,7 @@ func (c *DNSChannel) Start() error {
 		sg1.Log("Running DNS server on '%s:%d' ...\n", c.address, c.port)
 
 		go func() {
-			if err := c.server.server.ListenAndServe(); err != nil {
+			if err := c.server.ListenAndServe(); err != nil {
 				panic(err)
 			}
 		}()
@@ -224,7 +208,8 @@ func (c *DNSChannel) Read(b []byte) (n int, err error) {
 		return 0, fmt.Errorf("dns client can't be used for reading.")
 	}
 
-	data := <-c.server.chunks
+	packet := c.seq.Get()
+	data := packet.Data
 	for i, c := range data {
 		b[i] = c
 	}
@@ -235,8 +220,8 @@ func (c *DNSChannel) Read(b []byte) (n int, err error) {
 }
 
 func (c *DNSChannel) Lookup(fqdn string) error {
-	if c.client.client == nil {
-		sg1.Debug("Resolving %s (seqn=0x%x) ...\n", fqdn, c.client.seqn)
+	if c.client == nil {
+		sg1.Debug("Resolving %s ...\n", fqdn)
 
 		if _, err := net.LookupHost(fqdn); err != nil {
 			return err
@@ -251,7 +236,7 @@ func (c *DNSChannel) Lookup(fqdn string) error {
 		m1.Question = make([]dns.Question, 1)
 		m1.Question[0] = dns.Question{fqdn + ".", dns.TypeA, dns.ClassINET}
 
-		if _, _, err := c.client.client.Exchange(m1, fmt.Sprintf("%s:%d", c.address, c.port)); err != nil {
+		if _, _, err := c.client.Exchange(m1, fmt.Sprintf("%s:%d", c.address, c.port)); err != nil {
 			return err
 		}
 	}
@@ -269,10 +254,7 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 	wrote := 0
 	for _, chunk := range BufferToChunks(b, DNSChunkSize) {
 		size := len(chunk)
-		packet := NewPacket(c.client.seqn, uint32(size), chunk)
-
-		sg1.Debug("Encoding chunk of %d bytes.\n", size)
-
+		packet := c.seq.Packet(chunk)
 		fqdn := fmt.Sprintf("%s.%s", packet.Hex(), c.domain)
 
 		if err := c.Lookup(fqdn); err != nil {
@@ -282,8 +264,6 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 			wrote += size
 			c.stats.TotalWrote += size
 		}
-
-		c.client.seqn++
 	}
 
 	return wrote, nil

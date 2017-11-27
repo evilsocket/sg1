@@ -56,7 +56,6 @@ func DecodePacket(buffer []byte) (p *Packet, err error) {
 	size_buf := buffer[4:8]
 	max_size := len(buffer) - p.HeaderSize()
 
-	// TODO: Check sequence number
 	seqn := binary.BigEndian.Uint32(seqn_buf)
 	size := binary.BigEndian.Uint32(size_buf)
 
@@ -79,10 +78,10 @@ func (p *Packet) Raw() []byte {
 	size_buf := make([]byte, 4)
 
 	binary.BigEndian.PutUint32(seqn_buf, p.SeqNumber)
-	binary.BigEndian.PutUint32(seqn_buf, p.DataSize)
+	binary.BigEndian.PutUint32(size_buf, p.DataSize)
 
-	buffer := append(seqn_buf, p.Data...)
-	buffer = append(size_buf, buffer...)
+	buffer := append(size_buf, p.Data...)
+	buffer = append(seqn_buf, buffer...)
 
 	return buffer
 }
