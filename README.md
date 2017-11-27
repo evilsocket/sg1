@@ -134,6 +134,15 @@ Examples:
     -in tcp:0.0.0.0:10000
     -out tcp:192.168.1.2:10000
 
+**udp** 
+
+An udp packet listener (if used as input) or client (as output).
+
+Examples:
+
+    -in udp:0.0.0.0:10000
+    -out udp:192.168.1.2:10000
+
 **tls**
 
 A tls tcp server (if used as input) or client (as output), it will automatically generate the key pair or load them via `--tls-pem` and `--tls-key` optional parameters.
