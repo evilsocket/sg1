@@ -92,6 +92,8 @@ func (c *ICMPChannel) Setup(direction Direction, args string) (err error) {
 }
 
 func (c *ICMPChannel) Start() (err error) {
+	c.seq.Start()
+
 	if c.is_client == true {
 		if c.conn, err = icmp.ListenPacket("ip4:icmp", "0.0.0.0"); err != nil {
 			return err

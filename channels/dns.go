@@ -172,6 +172,8 @@ func (c *DNSChannel) Setup(direction Direction, args string) (err error) {
 }
 
 func (c *DNSChannel) Start() error {
+	c.seq.Start()
+
 	if c.is_client == true {
 		sg1.Log("Performing DNS lookups ...\n")
 	} else {

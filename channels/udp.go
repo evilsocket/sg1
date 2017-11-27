@@ -88,6 +88,8 @@ func (c *UDPChannel) Setup(direction Direction, args string) (err error) {
 }
 
 func (c *UDPChannel) Start() (err error) {
+	c.seq.Start()
+
 	if c.is_client == true {
 		local, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
 		if err != nil {

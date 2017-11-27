@@ -48,6 +48,12 @@ func NewPacket(seqn uint32, seqtot uint32, datasize uint32, data []byte) *Packet
 	}
 }
 
+func (p *Packet) Copy() *Packet {
+	new_data := make([]byte, p.DataSize)
+	copy(new_data, p.Data)
+	return NewPacket(p.SeqNumber, p.SeqTotal, p.DataSize, new_data)
+}
+
 func DecodePacket(buffer []byte) (p *Packet, err error) {
 	buf_size := len(buffer)
 	if buf_size < p.HeaderSize() {

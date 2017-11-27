@@ -104,6 +104,8 @@ func (c *Pastebin) Setup(direction Direction, args string) error {
 }
 
 func (c *Pastebin) Start() error {
+	c.seq.Start()
+
 	if c.is_client == true {
 		sg1.Log("Sending data to pastebin ...\n")
 	} else {

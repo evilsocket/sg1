@@ -50,9 +50,11 @@ func NewPacketSequencer() *PacketSequencer {
 
 	s.cond = sync.NewCond(s.mutex)
 
-	go s.worker()
-
 	return s
+}
+
+func (s *PacketSequencer) Start() {
+	go s.worker()
 }
 
 func (s *PacketSequencer) add(p *Packet) {
@@ -69,6 +71,12 @@ func (s *PacketSequencer) add(p *Packet) {
 	sort.Slice(s.queue, func(i, j int) bool {
 		return s.queue[i].SeqNumber < s.queue[j].SeqNumber
 	})
+
+	/*
+		for i, p := range s.queue {
+			Debug("  packets[%d] = '%s'\n", i, string(p.Data))
+		}
+	*/
 
 	s.cond.Signal()
 }
@@ -117,7 +125,7 @@ func (s *PacketSequencer) Packet(data []byte, total uint32) *Packet {
 }
 
 func (s *PacketSequencer) Add(packet *Packet) {
-	s.in <- packet
+	s.in <- packet.Copy()
 }
 
 func (s *PacketSequencer) HasPacket() bool {
