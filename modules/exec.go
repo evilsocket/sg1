@@ -28,7 +28,6 @@ package modules
 
 import (
 	"github.com/evilsocket/sg1"
-	"github.com/evilsocket/sg1/channels"
 	"os/exec"
 	"strings"
 )
@@ -52,42 +51,40 @@ func (m *Exec) Register() error {
 	return nil
 }
 
-func (m *Exec) Run(input, output channels.Channel, buffer_size, delay int) error {
-	return ReadLoop(input, output, buffer_size, delay, func(buff []byte) (int, []byte, error) {
-		var err error
-		var cmdout []byte
+func (m *Exec) Run(buff []byte) (int, []byte, error) {
+	var err error
+	var cmdout []byte
 
-		cmdline := string(buff)
-		cmdline = strings.Trim(cmdline, " \x00\t\r\n")
+	cmdline := string(buff)
+	cmdline = strings.Trim(cmdline, " \x00\t\r\n")
+
+	if cmdline != "" {
+		sg1.Debug("Parsing and executing command line (%d bytes) '%s'.\n", len(buff), cmdline)
+
+		cmd := ""
+		args := []string{}
 
 		if cmdline != "" {
-			sg1.Debug("Parsing and executing command line (%d bytes) '%s'.\n", len(buff), cmdline)
-
-			cmd := ""
-			args := []string{}
-
-			if cmdline != "" {
-				parts := strings.Fields(cmdline)
-				cmd = parts[0]
-				args = parts[1:]
-			}
-
-			path, err := exec.LookPath(cmd)
-			if err != nil {
-				sg1.Error("Error while looking path of '%s': %s.\n", cmd, err)
-				cmdout = []byte(err.Error())
-			} else {
-				sg1.Debug("  path='%s' %d args='%s'\n", path, len(args), args)
-				raw, err := exec.Command(path, args...).CombinedOutput()
-				if err != nil {
-					sg1.Error("Error while executing '%s %s': %s.\n", path, args, err)
-					cmdout = []byte(err.Error())
-				} else {
-					cmdout = []byte(raw)
-				}
-			}
+			parts := strings.Fields(cmdline)
+			cmd = parts[0]
+			args = parts[1:]
 		}
 
-		return len(cmdout), cmdout, err
-	})
+		path, err := exec.LookPath(cmd)
+		if err != nil {
+			sg1.Error("Error while looking path of '%s': %s.\n", cmd, err)
+			cmdout = []byte(err.Error())
+		} else {
+			sg1.Debug("  path='%s' %d args='%s'\n", path, len(args), args)
+			raw, err := exec.Command(path, args...).CombinedOutput()
+			if err != nil {
+				sg1.Error("Error while executing '%s %s': %s.\n", path, args, err)
+				cmdout = []byte(err.Error())
+			} else {
+				cmdout = []byte(raw)
+			}
+		}
+	}
+
+	return len(cmdout), cmdout, err
 }

@@ -140,37 +140,35 @@ func (m *AES) decrypt(ciphertext []byte, keystring string) (error, []byte) {
 	return nil, ciphertext
 }
 
-func (m *AES) Run(input, output channels.Channel, buffer_size, delay int) error {
+func (m *AES) Run(buff []byte) (int, []byte, error) {
 	if m.key == "" {
-		return fmt.Errorf("No AES key specified.")
+		return 0, nil, fmt.Errorf("No AES key specified.")
 	}
 
-	return ReadLoop(input, output, buffer_size, delay, func(buff []byte) (int, []byte, error) {
-		var err error
-		var data []byte
+	var err error
+	var data []byte
 
-		if m.mode == "encrypt" {
-			size := len(buff)
-			sg1.Debug("AES encrypting %d bytes ...\n", size)
-			packet := channels.NewPacket(0, uint32(size), buff)
-			buff = packet.Raw()
-			sg1.Debug("Packet: %s\n", sg1.Hex(buff))
+	if m.mode == "encrypt" {
+		size := len(buff)
+		sg1.Debug("AES encrypting %d bytes ...\n", size)
+		packet := channels.NewPacket(0, uint32(size), buff)
+		buff = packet.Raw()
+		sg1.Debug("Packet: %s\n", sg1.Hex(buff))
 
-			err, data = m.encrypt(buff, m.key)
-		} else if m.mode == "decrypt" {
-			sg1.Debug("AES decrypting %d bytes ...\n", len(buff))
-			err, data = m.decrypt(buff, m.key)
-			if err == nil {
-				if packet, err := channels.DecodePacket(data); err == nil {
-					sg1.Debug("AES decrypted packet of %d bytes.\n", packet.DataSize)
-					sg1.Debug("Packet data: %s\n", sg1.Hex(packet.Data))
-					data = packet.Data
-				}
+		err, data = m.encrypt(buff, m.key)
+	} else if m.mode == "decrypt" {
+		sg1.Debug("AES decrypting %d bytes ...\n", len(buff))
+		err, data = m.decrypt(buff, m.key)
+		if err == nil {
+			if packet, err := channels.DecodePacket(data); err == nil {
+				sg1.Debug("AES decrypted packet of %d bytes.\n", packet.DataSize)
+				sg1.Debug("Packet data: %s\n", sg1.Hex(packet.Data))
+				data = packet.Data
 			}
-		} else {
-			err = fmt.Errorf("Unhandled AES mode '%s'.", m.mode)
 		}
+	} else {
+		err = fmt.Errorf("Unhandled AES mode '%s'.", m.mode)
+	}
 
-		return len(data), data, err
-	})
+	return len(data), data, err
 }

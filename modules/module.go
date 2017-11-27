@@ -37,7 +37,7 @@ type Module interface {
 
 	Register() error
 
-	Run(in, out channels.Channel, buffer_size, delay int) error
+	Run(buff []byte) (int, []byte, error)
 }
 
 type DataHandler func(buff []byte) (int, []byte, error)

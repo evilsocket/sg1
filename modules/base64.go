@@ -60,22 +60,20 @@ func (m *Base64) Register() error {
 	return nil
 }
 
-func (m *Base64) Run(input, output channels.Channel, buffer_size, delay int) error {
-	return ReadLoop(input, output, buffer_size, delay, func(buff []byte) (int, []byte, error) {
-		var output []byte
+func (m *Base64) Run(buff []byte) (int, []byte, error) {
+	var output []byte
 
-		if m.mode == "encode" {
-			encoded := b64.StdEncoding.EncodeToString(buff)
-			output = []byte(encoded)
-		} else {
-			decoded, err := b64.StdEncoding.DecodeString(string(buff))
-			if err != nil {
-				sg1.Error("%s\n", err)
-				return 0, nil, err
-			}
-			output = decoded
+	if m.mode == "encode" {
+		encoded := b64.StdEncoding.EncodeToString(buff)
+		output = []byte(encoded)
+	} else {
+		decoded, err := b64.StdEncoding.DecodeString(string(buff))
+		if err != nil {
+			sg1.Error("%s\n", err)
+			return 0, nil, err
 		}
+		output = decoded
+	}
 
-		return len(output), output, nil
-	})
+	return len(output), output, nil
 }

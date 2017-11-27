@@ -84,13 +84,19 @@ The main `sg1` operation logic is:
 
     while input.has_data() {
         data = input.read()
-        results = module.process(data)
+        foreach module in modules {
+            data = module.process(data)
+        }
         output.write(data)
     }
 
 Keep in mind that modules and channels can be piped one to another, just use `sg1 -h` to see a list of available channels and modules, try to pipe them and see what happens ^_^
 
 ### Modules
+
+Modules can be combined, for instance if you want to read from input, decrypt from AES and execute, you would use:
+
+    -in:... -modules aes,exec -aes-mode decrypt -aes-key _somekeysomekey_ -out:...
 
 **raw** 
 
@@ -106,8 +112,8 @@ Will read from input, encrypt or decrypt (depending on `--aes-mode` parameter, w
 
 Examples:
 
-    -module aes --aes-key y0urp4ssw0rd
-    -module aes -aes-module decrypt --aes-key y0urp4ssw0rd
+    -modules aes --aes-key y0urp4ssw0rd
+    -modules aes -aes-modules decrypt --aes-key y0urp4ssw0rd
 
 **exec**
 

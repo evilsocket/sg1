@@ -26,10 +26,6 @@
  */
 package modules
 
-import (
-	"github.com/evilsocket/sg1/channels"
-)
-
 type Raw struct {
 }
 
@@ -49,6 +45,6 @@ func (m *Raw) Register() error {
 	return nil
 }
 
-func (m *Raw) Run(input, output channels.Channel, buffer_size, delay int) error {
-	return ReadLoop(input, output, buffer_size, delay, nil)
+func (m *Raw) Run(buff []byte) (int, []byte, error) {
+	return len(buff), buff, nil
 }

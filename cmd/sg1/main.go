@@ -31,6 +31,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/evilsocket/sg1"
@@ -41,7 +42,7 @@ import (
 func init() {
 	flag.StringVar(&sg1.From, "in", sg1.From, "Read input data from this channel.")
 	flag.StringVar(&sg1.To, "out", sg1.To, "Write output data to this channel.")
-	flag.StringVar(&sg1.ModuleName, "module", sg1.ModuleName, "Module name to use.")
+	flag.StringVar(&sg1.ModuleNames, "modules", sg1.ModuleNames, "Comma separated list of modules to use.")
 	flag.IntVar(&sg1.Delay, "delay", sg1.Delay, "Delay in milliseconds to wait between one I/O loop and another, or 0 for no delay.")
 	flag.IntVar(&sg1.BufferSize, "buffer-size", sg1.BufferSize, "Buffer size to use while reading data to input and writing to output.")
 	flag.BoolVar(&sg1.DebugMessages, "debug", sg1.DebugMessages, "Enable debug messages.")
@@ -95,7 +96,7 @@ func main() {
 
 	var input channels.Channel
 	var output channels.Channel
-	var module modules.Module
+	var run_modules = make([]modules.Module, 0)
 	var err error
 
 	if input, err = channels.Factory(sg1.From, channels.INPUT_CHANNEL); err != nil {
@@ -106,14 +107,20 @@ func main() {
 		onError(err)
 	}
 
-	if module, err = modules.Factory(sg1.ModuleName); err != nil {
-		onError(err)
+	module_names := strings.Split(sg1.ModuleNames, ",")
+	for _, name := range module_names {
+		if module, err := modules.Factory(name); err != nil {
+			onError(err)
+		} else {
+			sg1.Debug("Loaded module %s.\n", module.Name())
+			run_modules = append(run_modules, module)
+		}
 	}
 
-	if module.Name() == "raw" {
+	if len(module_names) == 1 && module_names[0] == "raw" {
 		sg1.Log("%s --> %s\n", input.Name(), output.Name())
 	} else {
-		sg1.Log("%s --> [%s] --> %s\n", input.Name(), module.Name(), output.Name())
+		sg1.Log("%s --> [%s] --> %s\n", input.Name(), sg1.ModuleNames, output.Name())
 	}
 
 	if err = input.Start(); err != nil {
@@ -126,7 +133,24 @@ func main() {
 
 	start := time.Now()
 
-	if err = module.Run(input, output, sg1.BufferSize, sg1.Delay); err != nil {
+	err = modules.ReadLoop(input, output, sg1.BufferSize, sg1.Delay, func(buff []byte) (int, []byte, error) {
+		var run_error error
+		var ret []byte
+
+		for _, module := range run_modules {
+			sg1.Debug("Running module %s on buffer of %d bytes.\n", module.Name(), len(buff))
+			_, ret, run_error = module.Run(buff)
+			if run_error != nil {
+				sg1.Debug("run_error = %s\n", run_error)
+				break
+			}
+			buff = ret
+		}
+
+		return len(buff), buff, run_error
+	})
+
+	if err != nil {
 		sg1.Error("%s.\n", err)
 	} else {
 		elapsed := time.Since(start)
