@@ -34,13 +34,15 @@ import (
 
 type Packet struct {
 	SeqNumber uint32
+	SeqTotal  uint32
 	DataSize  uint32
 	Data      []byte
 }
 
-func NewPacket(seqn uint32, datasize uint32, data []byte) *Packet {
+func NewPacket(seqn uint32, seqtot uint32, datasize uint32, data []byte) *Packet {
 	return &Packet{
 		SeqNumber: seqn,
+		SeqTotal:  seqtot,
 		DataSize:  datasize,
 		Data:      data,
 	}
@@ -53,34 +55,39 @@ func DecodePacket(buffer []byte) (p *Packet, err error) {
 	}
 
 	seqn_buf := buffer[0:4]
-	size_buf := buffer[4:8]
+	totn_buf := buffer[4:8]
+	size_buf := buffer[8:12]
 	max_size := len(buffer) - p.HeaderSize()
 
 	seqn := binary.BigEndian.Uint32(seqn_buf)
+	totn := binary.BigEndian.Uint32(totn_buf)
 	size := binary.BigEndian.Uint32(size_buf)
 
 	data_buf := make([]byte, 0)
 	if size > uint32(max_size) {
 		return nil, fmt.Errorf("Data size %d is more than the %d bytes of available payload.", size, max_size)
 	} else if size > 0 {
-		data_buf = buffer[8:]
+		data_buf = buffer[12:]
 	}
 
-	return NewPacket(seqn, size, data_buf[:size]), nil
+	return NewPacket(seqn, totn, size, data_buf[:size]), nil
 }
 
 func (p *Packet) HeaderSize() int {
-	return 4 + 4
+	return 4 + 4 + 4
 }
 
 func (p *Packet) Raw() []byte {
 	seqn_buf := make([]byte, 4)
+	totn_buf := make([]byte, 4)
 	size_buf := make([]byte, 4)
 
 	binary.BigEndian.PutUint32(seqn_buf, p.SeqNumber)
+	binary.BigEndian.PutUint32(totn_buf, p.SeqTotal)
 	binary.BigEndian.PutUint32(size_buf, p.DataSize)
 
 	buffer := append(size_buf, p.Data...)
+	buffer = append(totn_buf, buffer...)
 	buffer = append(seqn_buf, buffer...)
 
 	return buffer

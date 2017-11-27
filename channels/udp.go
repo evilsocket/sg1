@@ -181,18 +181,15 @@ func (c *UDPChannel) Write(b []byte) (n int, err error) {
 	sg1.Debug("Writing %d bytes to UDP channel as chunks of %d bytes.\n", len(b), UDPChunkSize)
 
 	wrote := 0
-	for _, chunk := range sg1.BufferToChunks(b, UDPChunkSize) {
-		size := len(chunk)
-		packet := c.seq.Packet(chunk)
-
+	for _, packet := range c.seq.Packets(b, UDPChunkSize) {
 		sg1.Debug("Sending %d bytes of encoded packet.\n", packet.DataSize)
 
 		if err := c.sendPacket(packet); err != nil {
 			sg1.Error("Error while sending UDP packet: %s\n", err)
 		} else {
-			sg1.Debug("Wrote %d bytes.\n", size)
-			wrote += size
-			c.stats.TotalWrote += size
+			sg1.Debug("Wrote %d bytes.\n", packet.DataSize)
+			wrote += int(packet.DataSize)
+			c.stats.TotalWrote += int(packet.DataSize)
 		}
 	}
 

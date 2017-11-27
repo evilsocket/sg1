@@ -252,17 +252,14 @@ func (c *DNSChannel) Write(b []byte) (n int, err error) {
 	sg1.Debug("Sending %d bytes in chunks of %d bytes...\n", len(b), DNSChunkSize)
 
 	wrote := 0
-	for _, chunk := range sg1.BufferToChunks(b, DNSChunkSize) {
-		size := len(chunk)
-		packet := c.seq.Packet(chunk)
+	for _, packet := range c.seq.Packets(b, DNSChunkSize) {
 		fqdn := fmt.Sprintf("%s.%s", packet.Hex(), c.domain)
-
 		if err := c.Lookup(fqdn); err != nil {
 			sg1.Error("Error while performing DNS lookup: %s\n", err)
 		} else {
-			sg1.Debug("Wrote %d bytes to DNS client.\n", size)
-			wrote += size
-			c.stats.TotalWrote += size
+			sg1.Debug("Wrote %d bytes to DNS client.\n", packet.DataSize)
+			wrote += int(packet.DataSize)
+			c.stats.TotalWrote += int(packet.DataSize)
 		}
 	}
 

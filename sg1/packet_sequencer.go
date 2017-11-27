@@ -82,11 +82,37 @@ func (s *PacketSequencer) worker() {
 	}
 }
 
-func (s *PacketSequencer) Packet(data []byte) *Packet {
+func (s *PacketSequencer) Packets(buffer []byte, chunk_size int) []*Packet {
+	chunks := BufferToChunks(buffer, chunk_size)
+	packets := make([]*Packet, 0)
+	nchunks := len(chunks)
+
+	for _, chunk := range chunks {
+		packet := s.Packet(chunk, uint32(nchunks))
+		packets = append(packets, packet)
+	}
+
+	return packets
+}
+
+func (s *PacketSequencer) nextSeqNumber(n uint32, total uint32) {
+	last := total - 1
+	if n == last {
+		Debug("Got last packet (seqn=%d), reset seqn to 0.\n", n)
+		atomic.SwapUint32(&s.seqn, 0)
+	} else {
+		atomic.AddUint32(&s.seqn, 1)
+	}
+}
+
+func (s *PacketSequencer) Packet(data []byte, total uint32) *Packet {
 	size := len(data)
-	packet := NewPacket(s.seqn, uint32(size), data)
-	Debug("PacketSequencer built a packet with seqn=%d\n", s.seqn)
-	atomic.AddUint32(&s.seqn, 1)
+	packet := NewPacket(s.seqn, total, uint32(size), data)
+
+	Debug("PacketSequencer built a packet with seqn=%d tot=%d\n", s.seqn, total)
+
+	s.nextSeqNumber(s.seqn, total)
+
 	return packet
 }
 
@@ -126,7 +152,6 @@ func (s *PacketSequencer) WaitForSeqn(n uint32) {
 
 func (s *PacketSequencer) Get() *Packet {
 	s.WaitForSeqn(s.seqn)
-	atomic.AddUint32(&s.seqn, 1)
 
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -134,7 +159,9 @@ func (s *PacketSequencer) Get() *Packet {
 	packet := s.queue[0]
 	s.queue = s.queue[1:]
 
-	Debug("Returning packet with sequence number %d.\n", packet.SeqNumber)
+	Debug("Returning packet with sequence number %d / %d.\n", packet.SeqNumber, packet.SeqTotal)
+
+	s.nextSeqNumber(packet.SeqNumber, packet.SeqTotal)
 
 	return packet
 }

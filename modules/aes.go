@@ -151,7 +151,7 @@ func (m *AES) Run(buff []byte) (int, []byte, error) {
 	if m.mode == "encrypt" {
 		size := len(buff)
 		sg1.Debug("AES encrypting %d bytes ...\n", size)
-		packet := sg1.NewPacket(0, uint32(size), buff)
+		packet := sg1.NewPacket(0, 1, uint32(size), buff)
 		buff = packet.Raw()
 		sg1.Debug("Packet: %s\n", sg1.Hex(buff))
 

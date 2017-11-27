@@ -224,7 +224,7 @@ func (c *Pastebin) Read(b []byte) (n int, err error) {
 }
 
 func (c *Pastebin) Write(b []byte) (n int, err error) {
-	packet := c.seq.Packet(b)
+	packet := c.seq.Packet(b, 1)
 	size := len(b)
 	paste := Paste{
 		Text:       packet.Hex(),
