@@ -1,7 +1,5 @@
 TARGET=sg1
 BUILD_DATE=`date +%Y-%m-%d\ %H:%M`
-BUILD_COMMIT=$(shell git rev-parse HEAD)
-BUILD_BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 BUILD_FOLDER=build
 BUILD_FILE=sg1/build.go
 
@@ -24,8 +22,6 @@ build_file:
 	@echo "package sg1" > $(BUILD_FILE)
 	@echo "const (" >> $(BUILD_FILE)
 	@echo "  APP_BUILD_DATE = \"$(BUILD_DATE)\"" >> $(BUILD_FILE)
-	@echo "  APP_BUILD_BRANCH = \"$(BUILD_BRANCH)\"" >> $(BUILD_FILE)
-	@echo "  APP_BUILD_COMMIT = \"$(BUILD_COMMIT)\"" >> $(BUILD_FILE)
 	@echo ")" >> $(BUILD_FILE)
 
 clean:
