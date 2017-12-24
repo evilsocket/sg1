@@ -1,7 +1,5 @@
 TARGET=sg1
-BUILD_DATE=`date +%Y-%m-%d\ %H:%M`
 BUILD_FOLDER=build
-BUILD_FILE=sg1/build.go
 
 all: sg1
 	@echo "@ Done"
@@ -17,12 +15,5 @@ test: build_file
 build_folder:
 	@mkdir -p $(BUILD_FOLDER)
 
-build_file: 
-	@rm -f $(BUILD_FILE)
-	@echo "package sg1" > $(BUILD_FILE)
-	@echo "const (" >> $(BUILD_FILE)
-	@echo "  APP_BUILD_DATE = \"$(BUILD_DATE)\"" >> $(BUILD_FILE)
-	@echo ")" >> $(BUILD_FILE)
-
 clean:
-	@rm -rf $(TARGET) $(BUILD_FILE) $(BUILD_FOLDER)
+	@rm -rf $(TARGET) $(BUILD_FOLDER)
